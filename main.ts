@@ -1,72 +1,53 @@
-// Main entrypoint for the project
-// This file starts all microservices or allows running them individually
+import { existsSync, mkdirSync } from 'fs';
+import { API_GATEWAY_URL, DOCUMENT_PROCESSING_URL, SEARCH_SERVICE_URL, STORAGE_SERVICE_URL, VECTOR_SERVICE_URL, QUERY_ENGINE_URL } from './config';
 
-import { spawn } from 'child_process';
-import { HOST, SERVER_PORT, FRONTEND_PORT } from './config';
+console.log('🚀 Starting Akıllı Doküman Arama ve Sorgulama Sistemi...');
 
-// Service configs with file paths and ports
-const services = [
-  { name: 'document-processing', path: './services/document-processing/index.ts', port: 8001 },
-  { name: 'search', path: './services/search/index.ts', port: 8002 },
-  { name: 'storage', path: './services/storage/index.ts', port: 8003 },
-  { name: 'vector', path: './services/vector/index.ts', port: 8004 },
-  { name: 'query-engine', path: './services/query-engine/index.ts', port: 8005 },
-  { name: 'api-gateway', path: './services/api-gateway/index.ts', port: SERVER_PORT },
-  { name: 'frontend', command: 'cd frontend && npm run dev', port: FRONTEND_PORT }
-];
-
-// Handle command line arguments
-const args = process.argv.slice(2);
-const servicesToRun = args.length > 0 
-  ? services.filter(s => args.includes(s.name) || args.includes('all'))
-  : [services.find(s => s.name === 'api-gateway')]; // Default to API gateway only
-
-// Log startup
-console.log('🚀 Starting services:', servicesToRun.map(s => s.name).join(', '));
-
-// Start each service
-servicesToRun.forEach(service => {
-  const command = service.command || `bun ${service.path}`;
-  
-  console.log(`Starting ${service.name} service: ${command}`);
-  
-  const child = spawn(command, {
-    shell: true,
-    env: {
-      ...process.env,
-      SERVER_PORT: service.port.toString(),
-      HOST
-    }
-  });
-  
-  // Handle output
-  child.stdout.on('data', (data) => {
-    console.log(`[${service.name}] ${data.toString().trim()}`);
-  });
-  
-  child.stderr.on('data', (data) => {
-    console.error(`[${service.name}] ${data.toString().trim()}`);
-  });
-  
-  // Handle service exit
-  child.on('close', (code) => {
-    console.log(`${service.name} service exited with code ${code}`);
-  });
-  
-  // Handle errors
-  child.on('error', (err) => {
-    console.error(`Error starting ${service.name} service:`, err);
-  });
+// Create necessary directories if they don't exist
+const dirs = ['logs', 'temp', 'uploads'];
+dirs.forEach(dir => {
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+    console.log(`📁 Created ${dir} directory`);
+  }
 });
 
-// Handle process shutdown
-process.on('SIGINT', () => {
-  console.log('Shutting down all services...');
-  process.exit(0);
-});
+// Import and start all services
+async function startServices() {
+  try {
+    // Start API Gateway
+    const apiGateway = await import('./services/api-gateway/index.js');
+    console.log(`🔀 API Gateway available at ${API_GATEWAY_URL}`);
 
-console.log(`
-🔗 Service URLs:
-- API Gateway: http://${HOST}:${SERVER_PORT}
-- Frontend: http://${HOST}:${FRONTEND_PORT}
-`);
+    // Start Document Processing Service
+    const documentProcessing = await import('./services/document-processing/index.js');
+    console.log(`📄 Document Processing Service available at ${DOCUMENT_PROCESSING_URL}`);
+
+    // Start Search Service
+    const searchService = await import('./services/search/index.js');
+    console.log(`🔍 Search Service available at ${SEARCH_SERVICE_URL}`);
+
+    // Start Storage Service
+    const storageService = await import('./services/storage/index.js');
+    console.log(`💾 Storage Service available at ${STORAGE_SERVICE_URL}`);
+
+    // Start Vector Service
+    const vectorService = await import('./services/vector/index.js');
+    console.log(`🧠 Vector Service available at ${VECTOR_SERVICE_URL}`);
+
+    // Start Query Engine Service
+    const queryEngineService = await import('./services/query-engine/index.js');
+    console.log(`❓ Query Engine Service available at ${QUERY_ENGINE_URL}`);
+
+    console.log('✅ All services started successfully!');
+    console.log('📊 System is now operational and ready to accept requests.');
+  } catch (error) {
+    console.error('❌ Error starting services:', error);
+    process.exit(1);
+  }
+}
+
+startServices().catch(err => {
+  console.error('🔥 Fatal error starting the application:', err);
+  process.exit(1);
+});

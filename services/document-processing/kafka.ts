@@ -1,10 +1,10 @@
 import { Kafka } from 'kafkajs';
 import { KAFKA_BROKERS } from '../../config';
 
-// Initialize Kafka client
+// Create Kafka client
 const kafka = new Kafka({
   clientId: 'document-processing-service',
-  brokers: KAFKA_BROKERS,
+  brokers: KAFKA_BROKERS
 });
 
 // Create producer
@@ -13,21 +13,16 @@ const producer = kafka.producer();
 /**
  * Initialize Kafka connection
  */
-async function initializeKafka() {
+export async function initializeKafka() {
   try {
+    console.log('Connecting to Kafka...');
     await producer.connect();
-    console.log('Connected to Kafka');
+    console.log('Connected to Kafka successfully');
   } catch (error) {
     console.error('Failed to connect to Kafka:', error);
     throw error;
   }
 }
-
-// Call initialize when the module loads
-initializeKafka().catch(error => {
-  console.error('Kafka initialization failed:', error);
-  process.exit(1);
-});
 
 /**
  * Send a message to a Kafka topic
@@ -37,33 +32,36 @@ initializeKafka().catch(error => {
  */
 export async function sendToKafka(topic: string, message: any) {
   try {
+    if (!producer.isConnected) {
+      await producer.connect();
+    }
+    
     await producer.send({
       topic,
       messages: [
         { 
           value: JSON.stringify(message),
-          timestamp: Date.now().toString(),
+          timestamp: Date.now().toString()
         },
       ],
     });
     
     console.log(`Message sent to topic ${topic}`);
-    
   } catch (error) {
-    console.error(`Failed to send message to Kafka topic ${topic}:`, error);
-    throw new Error(`Kafka message publishing failed: ${error.message}`);
+    console.error(`Error sending message to topic ${topic}:`, error);
+    throw error;
   }
 }
 
 // Handle graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM signal received: closing Kafka producer');
+  console.log('SIGTERM received, closing Kafka producer');
   await producer.disconnect();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  console.log('SIGINT signal received: closing Kafka producer');
+  console.log('SIGINT received, closing Kafka producer');
   await producer.disconnect();
   process.exit(0);
 });

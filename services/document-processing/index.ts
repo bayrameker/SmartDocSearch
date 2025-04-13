@@ -1,96 +1,100 @@
-import { Elysia } from 'elysia';
-import { cors } from '@elysiajs/cors';
-import { multipart } from '@elysiajs/multipart';
+import fastify from 'fastify';
 import { processDocument } from './ocr';
-import { extractEntities } from './nlp';
-import { sendToKafka } from './kafka';
-import { HOST, SERVER_PORT } from '../../config';
+import { initializeKafka } from './kafka';
+import { DOCUMENT_PROCESSING_URL } from '../../config';
 
-// Create an instance of the Elysia server
-const app = new Elysia()
-  .use(cors())
-  .use(multipart())
-  .onError(({ error, set }) => {
-    console.error('Error in document processing service:', error);
-    set.status = 500;
-    return {
-      success: false,
-      error: error.message || 'An unexpected error occurred during document processing',
-    };
-  });
-
-// Health check endpoint
-app.get('/health', () => {
-  return {
-    status: 'ok',
-    service: 'document-processing',
-    timestamp: new Date().toISOString(),
-  };
+const server = fastify({
+  logger: true
 });
 
-// Upload and process document endpoint
-app.post('/process', async ({ body, set }) => {
+// Extract the port from the URL
+const url = new URL(DOCUMENT_PROCESSING_URL);
+const port = parseInt(url.port, 10) || 8001;
+
+// Initialize Kafka connection
+initializeKafka().catch(err => {
+  server.log.error('Failed to initialize Kafka connection', err);
+  process.exit(1);
+});
+
+// Define routes
+server.post('/process', async (request, reply) => {
   try {
-    if (!body || !body.file) {
-      set.status = 400;
-      return {
+    const { documentId, storageKey, fileName, mimeType } = request.body as any;
+    
+    if (!documentId || !storageKey || !fileName || !mimeType) {
+      return reply.code(400).send({
         success: false,
-        error: 'No file provided',
-      };
+        error: 'Missing required fields'
+      });
     }
 
-    const file = body.file;
-    const userId = body.userId;
-    
-    if (!userId) {
-      set.status = 400;
-      return {
-        success: false,
-        error: 'User ID is required',
-      };
-    }
+    // Start document processing asynchronously
+    processDocument({ documentId, storageKey, fileName, mimeType })
+      .then(() => {
+        server.log.info(`Document ${documentId} processed successfully`);
+      })
+      .catch(err => {
+        server.log.error(`Error processing document ${documentId}`, err);
+      });
 
-    // Process the document (OCR if PDF)
-    const { text, metadata } = await processDocument(file);
-    
-    // Extract entities and other NLP features
-    const nlpResults = await extractEntities(text);
-    
-    // Prepare document data
-    const documentData = {
-      userId,
-      title: body.title || file.name,
-      filename: file.name,
-      mimeType: file.type,
-      text,
-      metadata,
-      nlpResults,
-    };
-    
-    // Send to Kafka for further processing by other services
-    await sendToKafka('document-processed', documentData);
-    
-    return {
+    return reply.code(202).send({
       success: true,
-      documentId: documentData.id,
-      message: 'Document submitted for processing',
-    };
-    
+      documentId,
+      message: 'Document processing started'
+    });
   } catch (error) {
-    console.error('Error processing document:', error);
-    set.status = 500;
-    return {
+    server.log.error('Error processing document', error);
+    return reply.code(500).send({
       success: false,
-      error: error.message || 'Failed to process document',
-    };
+      error: 'Internal server error'
+    });
   }
 });
 
-// Start the server
-if (import.meta.main) {
-  app.listen(SERVER_PORT, HOST, () => {
-    console.log(`🚀 Document Processing Service running at http://${HOST}:${SERVER_PORT}`);
-  });
-}
+server.get('/status/:id', async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const documentId = parseInt(id);
+    
+    if (isNaN(documentId)) {
+      return reply.code(400).send({
+        success: false,
+        error: 'Invalid document ID'
+      });
+    }
 
-export default app;
+    // TODO: Implement status checking
+    return reply.code(200).send({
+      documentId,
+      status: 'processing',
+      progress: 50
+    });
+  } catch (error) {
+    server.log.error('Error checking document status', error);
+    return reply.code(500).send({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+// Health check endpoint
+server.get('/health', async (request, reply) => {
+  return { status: 'ok', service: 'document-processing' };
+});
+
+// Start the server
+const start = async () => {
+  try {
+    await server.listen({ port, host: '0.0.0.0' });
+    console.log(`Document Processing Service running on ${DOCUMENT_PROCESSING_URL}`);
+  } catch (err) {
+    server.log.error(err);
+    process.exit(1);
+  }
+};
+
+start();
+
+export default server;

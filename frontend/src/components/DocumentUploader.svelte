@@ -5,14 +5,13 @@
 
   export let onSuccess = () => {};
   
-  const toast = useToast();
-  
   let fileInput;
   let selectedFile = null;
   let title = '';
   let uploading = false;
   let uploadProgress = 0;
   let error = null;
+  let successMessage = null;
   
   // Handle file selection
   function handleFileSelect(event) {
@@ -36,24 +35,12 @@
   // Handle document upload
   async function handleUpload() {
     if (!selectedFile) {
-      toast({
-        title: 'Dosya seçilmedi',
-        description: 'Lütfen yüklemek için bir dosya seçin',
-        status: 'warning',
-        duration: 3000,
-        isClosable: true,
-      });
+      error = 'Lütfen yüklemek için bir dosya seçin';
       return;
     }
     
     if (!title.trim()) {
-      toast({
-        title: 'Başlık gerekli',
-        description: 'Lütfen belge için bir başlık girin',
-        status: 'warning',
-        duration: 3000,
-        isClosable: true,
-      });
+      error = 'Lütfen belge için bir başlık girin';
       return;
     }
     
@@ -62,6 +49,7 @@
     try {
       uploading = true;
       error = null;
+      successMessage = null;
       
       // FormData oluştur
       const formData = new FormData();
@@ -83,13 +71,7 @@
       clearInterval(progressInterval);
       uploadProgress = 100;
       
-      toast({
-        title: 'Yükleme başarılı',
-        description: 'Belgeniz işleniyor',
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-      });
+      successMessage = 'Belge başarıyla yüklendi ve işleniyor';
       
       // Reset form
       selectedFile = null;
@@ -97,18 +79,13 @@
       fileInput.value = '';
       
       // Notify parent component
-      onSuccess();
+      setTimeout(() => {
+        onSuccess();
+      }, 2000);
       
     } catch (err) {
       error = err.message || 'Belge yükleme başarısız oldu';
       console.error('Yükleme hatası:', err);
-      toast({
-        title: 'Yükleme başarısız',
-        description: error,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
     } finally {
       if (progressInterval) clearInterval(progressInterval);
       uploading = false;
@@ -117,61 +94,179 @@
   }
 </script>
 
-<Box bg="white" p={6} borderRadius="md" boxShadow="sm">
+<div class="document-uploader">
   {#if error}
-    <Alert status="error" mb={4}>
-      <AlertIcon />
-      {error}
-    </Alert>
+    <div class="alert alert-error">
+      <i class="fas fa-exclamation-circle"></i> {error}
+    </div>
   {/if}
   
-  <FormControl mb={4}>
-    <FormLabel>Document Title</FormLabel>
-    <Input 
+  {#if successMessage}
+    <div class="alert alert-success">
+      <i class="fas fa-check-circle"></i> {successMessage}
+    </div>
+  {/if}
+  
+  <div class="form-group">
+    <label for="title">Belge Başlığı</label>
+    <input 
       type="text" 
-      placeholder="Enter document title" 
+      id="title"
+      placeholder="Belge başlığını girin" 
       bind:value={title}
       disabled={uploading}
     />
-    <FormHelperText>
-      A descriptive name for your document
-    </FormHelperText>
-  </FormControl>
+    <div class="form-hint">
+      Belgeniz için açıklayıcı bir isim
+    </div>
+  </div>
   
-  <FormControl mb={5}>
-    <FormLabel>Document File</FormLabel>
-    <Input
+  <div class="form-group">
+    <label for="file">Belge Dosyası</label>
+    <input
       type="file"
-      accept=".pdf,.txt"
-      onChange={handleFileSelect}
+      id="file"
+      accept=".pdf,.txt,.docx,.doc"
+      on:change={handleFileSelect}
       disabled={uploading}
       bind:this={fileInput}
     />
-    <FormHelperText>
-      Supported formats: PDF, TXT (Max 50MB)
-    </FormHelperText>
-  </FormControl>
+    <div class="form-hint">
+      Desteklenen formatlar: PDF, TXT, DOCX, DOC (maks. 50MB)
+    </div>
+  </div>
   
   {#if selectedFile}
-    <Box mb={4} p={3} bg="gray.50" borderRadius="md">
-      <Text><strong>Selected file:</strong> {selectedFile.name}</Text>
-      <Text><strong>Size:</strong> {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</Text>
-      <Text><strong>Type:</strong> {selectedFile.type}</Text>
-    </Box>
+    <div class="file-info">
+      <p><strong>Seçilen dosya:</strong> {selectedFile.name}</p>
+      <p><strong>Boyut:</strong> {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+      <p><strong>Tür:</strong> {selectedFile.type}</p>
+    </div>
   {/if}
   
   {#if uploading}
-    <Progress value={uploadProgress} mb={4} colorScheme="blue" />
+    <div class="progress-container">
+      <div class="progress-bar" style="width: {uploadProgress}%"></div>
+    </div>
   {/if}
   
-  <Button 
-    colorScheme="blue" 
-    onClick={handleUpload} 
-    isLoading={uploading}
-    loadingText="Uploading..."
+  <button 
+    class="btn-upload"
+    on:click={handleUpload} 
     disabled={!selectedFile || uploading}
-    width="full"
   >
-    Upload Document
-  </Button>
-</Box>
+    {#if uploading}
+      <i class="fas fa-spinner fa-spin"></i> Yükleniyor...
+    {:else}
+      <i class="fas fa-upload"></i> Belge Yükle  
+    {/if}
+  </button>
+</div>
+
+<style>
+  .document-uploader {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .alert {
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .alert-error {
+    background-color: #fed7d7;
+    color: #c53030;
+  }
+  
+  .alert-success {
+    background-color: #c6f6d5;
+    color: #2f855a;
+  }
+  
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+  
+  input[type="text"] {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.25rem;
+    font-size: 1rem;
+  }
+  
+  input[type="file"] {
+    width: 100%;
+    padding: 0.5rem 0;
+    font-size: 1rem;
+  }
+  
+  .form-hint {
+    font-size: 0.875rem;
+    color: #718096;
+    margin-top: 0.25rem;
+  }
+  
+  .file-info {
+    background-color: #f7fafc;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .file-info p {
+    margin: 0.25rem 0;
+  }
+  
+  .progress-container {
+    height: 0.5rem;
+    background-color: #edf2f7;
+    border-radius: 1rem;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+  
+  .progress-bar {
+    height: 100%;
+    background-color: #3182ce;
+    transition: width 0.3s ease;
+  }
+  
+  .btn-upload {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: #3182ce;
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .btn-upload:hover {
+    background-color: #2b6cb0;
+  }
+  
+  .btn-upload:disabled {
+    background-color: #a0aec0;
+    cursor: not-allowed;
+  }
+</style>

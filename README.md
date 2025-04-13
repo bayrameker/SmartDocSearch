@@ -1,123 +1,123 @@
-# Akıllı Doküman Arama ve Sorgulama Sistemi
+# Intelligent Document Search and Query System
 
-Bu proje, yapay zeka destekli belge arama ve sorgulama platformu sunan, mikroservis mimarisi kullanan gelişmiş bir uygulamadır. Kullanıcılar sisteme belgeler yükleyebilir, metin madenciliği ve yapay zeka teknolojileri ile gelişmiş arama ve soru-cevap yetenekleri kullanabilirler.
+This project is an advanced application using microservice architecture to provide an AI-powered document search and query platform. Users can upload documents to the system and utilize text mining and artificial intelligence technologies for advanced search and question-answering capabilities.
 
-## 🌟 Özellikler
+## 🌟 Features
 
-- **Belge Yükleme ve İşleme**: PDF, TXT, DOCX ve diğer belge formatlarını destekler
-- **Otomatik OCR**: Taranmış belgeleri ve imajları otomatik olarak metne dönüştürür
-- **Semantik Arama**: Anlam tabanlı arama ile ilgili belgeleri hızlıca bulun
-- **Yapay Zeka Sorguları**: Belgelerinizin içeriğine dayalı karmaşık sorular sorun
-- **Çoklu Dil Desteği**: Türkçe ve İngilizce dahil birden fazla dil desteği
-- **Güvenli Erişim Kontrolü**: Rol bazlı yetkilendirme sistemi
+- **Document Upload and Processing**: Supports PDF, TXT, DOCX, and other document formats
+- **Automatic OCR**: Automatically converts scanned documents and images to text
+- **Semantic Search**: Quickly find relevant documents with meaning-based search
+- **AI Queries**: Ask complex questions based on the content of your documents
+- **Multi-language Support**: Support for multiple languages including Turkish and English
+- **Secure Access Control**: Role-based authorization system
 
-## 🏗️ Mimari
+## 🏗️ Architecture
 
-Bu sistem aşağıdaki mikroservisleri içeren modüler bir yapıya sahiptir:
+This system has a modular structure that includes the following microservices:
 
-- **API Gateway**: Tüm istemci isteklerini karşılar ve ilgili servislere yönlendirir
-- **Document Processing**: Belge işleme, metin çıkarma ve OCR
-- **Search Service**: Tam metin arama ve indeksleme
-- **Storage Service**: Belge depolama ve metadata yönetimi
-- **Vector Service**: Belge vektör embeddinglari ve semantik arama
-- **Query Engine**: Doğal dil sorguları ve yapay zeka yanıtları
+- **API Gateway**: Receives all client requests and routes them to relevant services
+- **Document Processing**: Document processing, text extraction, and OCR
+- **Search Service**: Full-text search and indexing
+- **Storage Service**: Document storage and metadata management
+- **Vector Service**: Document vector embeddings and semantic search
+- **Query Engine**: Natural language queries and AI responses
 
-## 🚀 Teknoloji Yığını
+## 🚀 Technology Stack
 
 - **Backend**: Node.js, Fastify, gRPC
 - **Frontend**: SvelteKit
-- **Veritabanı**: PostgreSQL, Drizzle ORM
-- **Arama Motorları**: Typesense (metin arama), Qdrant (vektör arama)
-- **Mesajlaşma**: Apache Kafka
-- **Depolama**: MinIO (S3 uyumlu nesne depolama)
-- **AI/ML**: OpenAI (embeddings, soru-cevap)
+- **Database**: PostgreSQL, Drizzle ORM
+- **Search Engines**: Typesense (text search), Qdrant (vector search)
+- **Messaging**: Apache Kafka
+- **Storage**: MinIO (S3-compatible object storage)
+- **AI/ML**: OpenAI (embeddings, question-answering)
 
-## 🛠️ Kurulum
+## 🛠️ Installation
 
-### Gereksinimler
+### Requirements
 
 - Node.js 18+
 - PostgreSQL
-- MinIO (isteğe bağlı, dosya depolama için)
-- Apache Kafka (isteğe bağlı, asenkron iletişim için)
-- Typesense (isteğe bağlı, tam metin arama için)
-- Qdrant (isteğe bağlı, vektör arama için)
-- OpenAI API anahtarı (yapay zeka işlevleri için)
+- MinIO (optional, for file storage)
+- Apache Kafka (optional, for asynchronous communication)
+- Typesense (optional, for full-text search)
+- Qdrant (optional, for vector search)
+- OpenAI API key (for AI functionality)
 
-### Başlangıç
+### Getting Started
 
-1. Projeyi klonlayın:
+1. Clone the project:
    ```bash
-   git clone https://github.com/kullaniciadi/akilli-dokuman-arama.git
-   cd akilli-dokuman-arama
+   git clone https://github.com/username/intelligent-document-search.git
+   cd intelligent-document-search
    ```
 
-2. Bağımlılıkları yükleyin:
+2. Install dependencies:
    ```bash
    npm install
    ```
 
-3. `.env` dosyasını yapılandırın (örnek için `.env.example` dosyasını kopyalayın)
+3. Configure the `.env` file (copy `.env.example` for reference)
 
-4. Veritabanını başlatın:
+4. Initialize the database:
    ```bash
    npm run db:push
    ```
 
-5. Uygulamayı başlatın:
+5. Start the application:
    ```bash
    npm run dev
    ```
 
-Uygulama varsayılan olarak `http://localhost:5000` adresinde çalışacaktır.
+The application will be running at `http://localhost:5000` by default.
 
-## 📊 Çevresel Değişkenler
+## 📊 Environmental Variables
 
-| Değişken | Açıklama | Varsayılan |
-|----------|----------|------------|
-| DATABASE_URL | PostgreSQL veritabanı bağlantı URL'si | postgresql://user:password@localhost:5432/docusearch |
-| OPENAI_API_KEY | OpenAI API anahtarı | - |
-| FRONTEND_PORT | Frontend servisinin portu | 5000 |
-| SERVER_PORT | API Gateway portu | 8000 |
-| JWT_SECRET | JWT token şifreleme anahtarı | your-secret-key |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| DATABASE_URL | PostgreSQL database connection URL | postgresql://user:password@localhost:5432/docusearch |
+| OPENAI_API_KEY | OpenAI API key | - |
+| FRONTEND_PORT | Frontend service port | 5000 |
+| SERVER_PORT | API Gateway port | 8000 |
+| JWT_SECRET | JWT token encryption key | your-secret-key |
 
-## 📝 API Dokümantasyonu
+## 📝 API Documentation
 
-Temel API endpointleri:
+Core API endpoints:
 
-- `POST /auth/register` - Yeni kullanıcı kaydı
-- `POST /auth/login` - Kullanıcı girişi
-- `GET /documents` - Belge listesi
-- `POST /documents/upload` - Yeni belge yükleme
-- `GET /documents/:id` - Belge detayları
-- `POST /search` - Belgelerde arama yapma
-- `POST /query` - Belgelere doğal dil ile soru sorma
+- `POST /auth/register` - New user registration
+- `POST /auth/login` - User login
+- `GET /documents` - Document list
+- `POST /documents/upload` - Upload new document
+- `GET /documents/:id` - Document details
+- `POST /search` - Search within documents
+- `POST /query` - Ask questions in natural language about documents
 
-## 👨‍💻 Geliştirme
+## 👨‍💻 Development
 
-Yeni özellikleri eklerken veya mevcut kodu değiştirirken, lütfen aşağıdaki adımları izleyin:
+When adding new features or modifying existing code, please follow these steps:
 
-1. Yeni bir branch oluşturun
-2. Değişikliklerinizi yapın ve test edin
-3. Test süitlerini çalıştırın: `npm test`
-4. Değişikliklerinizi commit edin
-5. Pull request oluşturun
+1. Create a new branch
+2. Make and test your changes
+3. Run test suites: `npm test`
+4. Commit your changes
+5. Create a pull request
 
-## 🤝 Katkıda Bulunma
+## 🤝 Contributing
 
-Katkılarınızı bekliyoruz! Lütfen katkıda bulunmadan önce katkı kurallarımızı okuyun.
+Contributions are welcome! Please read our contribution guidelines before contributing.
 
-## 📜 Lisans
+## 📜 License
 
-Bu proje [MIT Lisansı](LICENSE) altında lisanslanmıştır.
+This project is licensed under the [MIT License](LICENSE).
 
-## 🙏 Teşekkürler
+## 🙏 Acknowledgements
 
-- [OpenAI](https://openai.com) - Yapay zeka modelleri için
-- [Svelte](https://svelte.dev) - Reaktif UI kütüphanesi
-- [Fastify](https://fastify.io) - Hızlı web framework
-- [PostgreSQL](https://postgresql.org) - Güvenilir ilişkisel veritabanı
+- [OpenAI](https://openai.com) - For AI models
+- [Svelte](https://svelte.dev) - Reactive UI library
+- [Fastify](https://fastify.io) - Fast web framework
+- [PostgreSQL](https://postgresql.org) - Reliable relational database
 
 ---
 
-© 2025 Akıllı Doküman Arama ve Sorgulama Sistemi
+© 2025 Intelligent Document Search and Query System

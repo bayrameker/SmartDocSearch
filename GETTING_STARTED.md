@@ -1,108 +1,108 @@
-# Başlangıç Rehberi
+# Getting Started Guide
 
-Bu belge, Akıllı Doküman Arama ve Sorgulama Sistemi'ni kurulum ve başlatma konusunda temel bilgiler sağlar.
+This document provides basic information on setting up and starting the Intelligent Document Search and Query System.
 
-## Önkoşullar
+## Prerequisites
 
-Sistemi çalıştırmak için aşağıdaki bileşenlerin kurulu olması gerekmektedir:
+The following components must be installed to run the system:
 
-- Node.js (v18 veya daha yeni)
-- PostgreSQL veritabanı
-- (İsteğe bağlı) MinIO, Typesense, Qdrant ve Kafka
+- Node.js (v18 or newer)
+- PostgreSQL database
+- (Optional) MinIO, Typesense, Qdrant, and Kafka
 
-## Adım Adım Kurulum
+## Step-by-Step Setup
 
-### 1. Bağımlılıkları Yükleme
+### 1. Installing Dependencies
 
-Projenin ana dizininde aşağıdaki komutu çalıştırın:
+Run the following command in the project's main directory:
 
 ```bash
 npm install
 ```
 
-Bu komut, tüm gerekli Node.js paketlerini yükleyecektir.
+This command will install all the necessary Node.js packages.
 
-### 2. Çevresel Değişkenleri Yapılandırma
+### 2. Configuring Environment Variables
 
-`.env.example` dosyasını kopyalayarak `.env` dosyası oluşturun:
+Create an `.env` file by copying `.env.example`:
 
 ```bash
 cp .env.example .env
 ```
 
-`.env` dosyasını düzenleyerek kendi ortamınıza uygun değerleri ayarlayın. Özellikle aşağıdaki değişkenleri yapılandırmak önemlidir:
+Edit the `.env` file to set values appropriate for your environment. It's particularly important to configure the following variables:
 
-- `DATABASE_URL`: PostgreSQL veritabanı bağlantı URL'niz
-- `OPENAI_API_KEY`: OpenAI API anahtarınız (yapay zeka özellikleri için gerekli)
-- `JWT_SECRET`: JWT token şifreleme anahtarınız (güvenlik için benzersiz ve güçlü bir değer olmalı)
+- `DATABASE_URL`: Your PostgreSQL database connection URL
+- `OPENAI_API_KEY`: Your OpenAI API key (required for AI features)
+- `JWT_SECRET`: Your JWT token encryption key (should be a unique and strong value for security)
 
-### 3. Veritabanını Başlatma
+### 3. Initializing the Database
 
-Veritabanı şemasını oluşturmak için:
+To create the database schema:
 
 ```bash
 npm run db:push
 ```
 
-### 4. Servisleri Başlatma
+### 4. Starting Services
 
-#### Geliştirme Modunda
+#### In Development Mode
 
-Tüm servisleri geliştirme modunda başlatmak için:
+To start all services in development mode:
 
 ```bash
 npm run dev
 ```
 
-Bu komut, aşağıdaki servisleri başlatacaktır:
+This command will start the following services:
 - Frontend Server (http://localhost:5000)
 - API Gateway (http://localhost:8000)
 - Document Processing Service (http://localhost:8001)
-- Ve diğer mikroservisler
+- And other microservices
 
-#### Üretim Modunda
+#### In Production Mode
 
-Uygulamayı üretim için derlemek için:
+To build the application for production:
 
 ```bash
 npm run build
 ```
 
-Derlenmiş uygulamayı başlatmak için:
+To start the compiled application:
 
 ```bash
 npm start
 ```
 
-## Belge Yükleme ve Arama
+## Document Upload and Search
 
-1. Tarayıcınızda `http://localhost:5000` adresine gidin
-2. Kayıt olun veya giriş yapın
-3. "Belge Yükle" sayfasından belge yükleyin
-4. Belge işlendikten sonra, arama ve sorgulama özelliklerini kullanmaya başlayabilirsiniz
+1. Go to `http://localhost:5000` in your browser
+2. Register or log in
+3. Upload a document from the "Upload Document" page
+4. After the document is processed, you can start using the search and query features
 
-## Sorun Giderme
+## Troubleshooting
 
-### Veritabanı Bağlantı Sorunları
+### Database Connection Issues
 
-- PostgreSQL'in çalıştığından emin olun
-- DATABASE_URL değişkeninin doğru olduğunu kontrol edin
-- PostgreSQL kullanıcısının gerekli yetkilere sahip olduğunu doğrulayın
+- Make sure PostgreSQL is running
+- Check that the DATABASE_URL variable is correct
+- Verify that the PostgreSQL user has the necessary permissions
 
-### API Gateway Erişim Sorunları
+### API Gateway Access Issues
 
-- API Gateway'in çalıştığından emin olun (`npm run api`)
-- CORS ayarlarının doğru yapılandırıldığını kontrol edin
+- Make sure the API Gateway is running (`npm run api`)
+- Check that CORS settings are configured correctly
 
-### OpenAI API Sorunları
+### OpenAI API Issues
 
-- OPENAI_API_KEY'in doğru olduğunu doğrulayın
-- API kotanızı ve kullanım limitlerini kontrol edin
-- Ağ bağlantısını kontrol edin
+- Verify that OPENAI_API_KEY is correct
+- Check your API quota and usage limits
+- Check network connectivity
 
-## Ortam Değişimi
+## Environment Switching
 
-Farklı ortamlarda (geliştirme, test, üretim) çalıştırmak için NODE_ENV değişkenini ayarlayabilirsiniz:
+You can set the NODE_ENV variable to run in different environments (development, test, production):
 
 ```bash
 NODE_ENV=production npm start
@@ -110,4 +110,4 @@ NODE_ENV=production npm start
 
 ---
 
-Daha fazla bilgi için ana [README.md](README.md) dosyasına bakın veya destek için bir issue açın.
+For more information, see the main [README.md](README.md) file or open an issue for support.

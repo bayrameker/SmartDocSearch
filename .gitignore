@@ -174,3 +174,5 @@ __tablestorage__
 **/generated/**
 /generated-icon.png
 **/attached_assets/**
+
+.replit

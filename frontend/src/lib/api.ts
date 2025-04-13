@@ -1,15 +1,8 @@
-// API Gateway URL
-const API_URL = 'http://localhost:8000';
+import { API_GATEWAY_URL } from '../config';
 
-// Utility to set auth token on requests
-function getAuthHeaders(): Record<string, string> {
-  const token = localStorage?.getItem('token');
-  return token ? { 'Authorization': `Bearer ${token}` } : {};
-}
-
-// Auth API
+// Auth API endpoints
 export async function loginUser(username: string, password: string) {
-  const response = await fetch(`${API_URL}/auth/login`, {
+  const response = await fetch(`${API_GATEWAY_URL}/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -19,16 +12,14 @@ export async function loginUser(username: string, password: string) {
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Giriş başarısız');
+    throw new Error(error.message || 'Giriş başarısız oldu');
   }
 
-  const data = await response.json();
-  localStorage?.setItem('token', data.token);
-  return data.user;
+  return response.json();
 }
 
 export async function registerUser(username: string, password: string, email: string) {
-  const response = await fetch(`${API_URL}/auth/register`, {
+  const response = await fetch(`${API_GATEWAY_URL}/auth/register`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -38,155 +29,156 @@ export async function registerUser(username: string, password: string, email: st
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Kayıt başarısız');
-  }
-
-  const data = await response.json();
-  localStorage?.setItem('token', data.token);
-  return data.user;
-}
-
-export async function checkAuth() {
-  const response = await fetch(`${API_URL}/auth/me`, {
-    method: 'GET',
-    headers: {
-      ...getAuthHeaders(),
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Kimlik doğrulama başarısız');
+    throw new Error(error.message || 'Kayıt başarısız oldu');
   }
 
   return response.json();
 }
 
-// Documents API
-export async function uploadDocument(formData: FormData) {
-  const response = await fetch(`${API_URL}/documents/upload`, {
+export async function logoutUser() {
+  const response = await fetch(`${API_GATEWAY_URL}/auth/logout`, {
     method: 'POST',
     headers: {
-      ...getAuthHeaders(),
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Çıkış başarısız oldu');
+  }
+
+  return true;
+}
+
+// Document API endpoints
+export async function getDocuments(page = 1, limit = 10) {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(`${API_GATEWAY_URL}/documents?page=${page}&limit=${limit}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Belgeleri alma başarısız oldu');
+  }
+
+  return response.json();
+}
+
+export async function getDocument(id: number) {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(`${API_GATEWAY_URL}/documents/${id}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Belge detaylarını alma başarısız oldu');
+  }
+
+  return response.json();
+}
+
+export async function uploadDocument(formData: FormData) {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(`${API_GATEWAY_URL}/documents/upload`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
     },
     body: formData,
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Yükleme başarısız');
-  }
-
-  return response.json();
-}
-
-export async function getDocuments(page = 1, limit = 10) {
-  const response = await fetch(
-    `${API_URL}/documents?page=${page}&limit=${limit}`,
-    {
-      method: 'GET',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/json',
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error('Dokümanlar alınamadı');
-  }
-
-  return response.json();
-}
-
-export async function getDocumentDownloadUrl(id: number): Promise<string> {
-  return `${API_URL}/documents/${id}/download`;
-}
-
-export async function getDocument(id: number) {
-  const response = await fetch(`${API_URL}/documents/${id}`, {
-    method: 'GET',
-    headers: {
-      ...getAuthHeaders(),
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Doküman alınamadı');
+    throw new Error(error.message || 'Belge yükleme başarısız oldu');
   }
 
   return response.json();
 }
 
 export async function deleteDocument(id: number) {
-  const response = await fetch(`${API_URL}/documents/${id}`, {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(`${API_GATEWAY_URL}/documents/${id}`, {
     method: 'DELETE',
     headers: {
-      ...getAuthHeaders(),
-      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
     },
   });
 
   if (!response.ok) {
-    throw new Error('Silme işlemi başarısız');
+    const error = await response.json();
+    throw new Error(error.message || 'Belge silme başarısız oldu');
   }
 
   return true;
 }
 
-// Search API
+export function getDocumentDownloadUrl(id: number) {
+  const token = localStorage.getItem('token');
+  return `${API_GATEWAY_URL}/documents/${id}/download?token=${token}`;
+}
+
+// Search API endpoints
 export async function searchDocuments(query: string, page = 1, limit = 10) {
-  const response = await fetch(
-    `${API_URL}/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`,
-    {
-      method: 'GET',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/json',
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error('Arama başarısız');
-  }
-
-  return response.json();
-}
-
-// Query API
-export async function getQueryHistory(page = 1, limit = 10) {
-  const response = await fetch(
-    `${API_URL}/queries?page=${page}&limit=${limit}`,
-    {
-      method: 'GET',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/json',
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error('Sorgu geçmişi alınamadı');
-  }
-
-  return response.json();
-}
-
-export async function queryDocuments(question: string) {
-  const response = await fetch(`${API_URL}/query`, {
-    method: 'POST',
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(`${API_GATEWAY_URL}/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`, {
     headers: {
-      ...getAuthHeaders(),
-      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({ query: question }),
   });
 
   if (!response.ok) {
-    throw new Error('Sorgulama başarısız');
+    const error = await response.json();
+    throw new Error(error.message || 'Arama başarısız oldu');
+  }
+
+  return response.json();
+}
+
+// Query API endpoints
+export async function queryDocuments(query: string) {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(`${API_GATEWAY_URL}/query`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ query }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Sorgu başarısız oldu');
+  }
+
+  return response.json();
+}
+
+export async function getQueryHistory() {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(`${API_GATEWAY_URL}/query/history`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Sorgu geçmişini alma başarısız oldu');
   }
 
   return response.json();

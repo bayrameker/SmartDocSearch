@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
+    "@sveltejs/adapter-node": "^5.2.12",
     "@sveltejs/kit": "^2.20.5",
     "drizzle-orm": "^0.41.0",
     "openai": "^4.93.0",

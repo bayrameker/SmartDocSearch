@@ -1,15 +1,4 @@
 <script>
-  import { 
-    Box, 
-    Heading, 
-    Text, 
-    Button, 
-    Flex,
-    Grid,
-    GridItem,
-    Card,
-    Image
-  } from '@chakra-ui/svelte';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { user } from '$lib/store';
@@ -26,165 +15,228 @@
   }
 </script>
 
-<Box py={8} px={4}>
-  <Flex direction="column" alignItems="center" textAlign="center" maxW="800px" mx="auto" mb={10}>
-    <Heading size="2xl" mb={4}>
-      Akıllı Doküman Arama ve Sorgulama Sistemi
-    </Heading>
-    <Text fontSize="xl" mb={6} color="gray.600">
+<div class="container">
+  <header>
+    <h1>Akıllı Doküman Arama ve Sorgulama Sistemi</h1>
+    <p class="subtitle">
       YZ destekli belge işleme, arama ve sorgulama çözümüyle dokümanlarınızdan  
       daha fazla değer elde edin. Belgelerinizdeki bilgileri zahmetsizce bulun.
-    </Text>
-    <Button 
-      colorScheme="blue" 
-      size="lg" 
-      onClick={handleGetStarted}
-      mb={6}
-    >
+    </p>
+    <button class="btn-primary" on:click={handleGetStarted}>
       Başlayın
-    </Button>
-  </Flex>
+    </button>
+  </header>
 
-  <Grid 
-    templateColumns={{base: "1fr", md: "repeat(3, 1fr)"}} 
-    gap={6} 
-    maxW="1200px" 
-    mx="auto"
-  >
-    <GridItem>
-      <Card p={5} height="100%" boxShadow="md" borderRadius="lg">
-        <Flex direction="column" alignItems="center" textAlign="center">
-          <Box fontSize="3xl" color="blue.500" mb={4}>
-            <i class="fas fa-file-upload"></i>
-          </Box>
-          <Heading size="md" mb={3}>Kolay Doküman Yükleme</Heading>
-          <Text>
-            Dokümanlarınızı sürükleyip bırakın veya bilgisayarınızdan seçin. 
-            PDF, Word, PowerPoint ve daha fazlasını destekler.
-          </Text>
-        </Flex>
-      </Card>
-    </GridItem>
+  <div class="features">
+    <div class="feature-card">
+      <div class="icon">
+        <i class="fas fa-file-upload"></i>
+      </div>
+      <h2>Kolay Doküman Yükleme</h2>
+      <p>
+        Dokümanlarınızı sürükleyip bırakın veya bilgisayarınızdan seçin. 
+        PDF, Word, PowerPoint ve daha fazlasını destekler.
+      </p>
+    </div>
     
-    <GridItem>
-      <Card p={5} height="100%" boxShadow="md" borderRadius="lg">
-        <Flex direction="column" alignItems="center" textAlign="center">
-          <Box fontSize="3xl" color="blue.500" mb={4}>
-            <i class="fas fa-search"></i>
-          </Box>
-          <Heading size="md" mb={3}>Gelişmiş Arama</Heading>
-          <Text>
-            Semantik arama ile içeriğe göz atmadan ilgili belgeleri bulun.
-            Anlama dayalı filtreleme ile zamanınızı verimli kullanın.
-          </Text>
-        </Flex>
-      </Card>
-    </GridItem>
+    <div class="feature-card">
+      <div class="icon">
+        <i class="fas fa-search"></i>
+      </div>
+      <h2>Gelişmiş Arama</h2>
+      <p>
+        Semantik arama ile içeriğe göz atmadan ilgili belgeleri bulun.
+        Anlama dayalı filtreleme ile zamanınızı verimli kullanın.
+      </p>
+    </div>
     
-    <GridItem>
-      <Card p={5} height="100%" boxShadow="md" borderRadius="lg">
-        <Flex direction="column" alignItems="center" textAlign="center">
-          <Box fontSize="3xl" color="blue.500" mb={4}>
-            <i class="fas fa-robot"></i>
-          </Box>
-          <Heading size="md" mb={3}>YZ ile Sorgulama</Heading>
-          <Text>
-            Dokümanlarınız hakkında doğal dilde sorular sorun.
-            YZ destekli analiz ile anında cevaplar alın.
-          </Text>
-        </Flex>
-      </Card>
-    </GridItem>
-  </Grid>
+    <div class="feature-card">
+      <div class="icon">
+        <i class="fas fa-robot"></i>
+      </div>
+      <h2>YZ ile Sorgulama</h2>
+      <p>
+        Dokümanlarınız hakkında doğal dilde sorular sorun.
+        YZ destekli analiz ile anında cevaplar alın.
+      </p>
+    </div>
+  </div>
   
-  <Box maxW="800px" mx="auto" mt={16} mb={8}>
-    <Heading size="xl" mb={6} textAlign="center">Nasıl Çalışır?</Heading>
+  <section class="how-it-works">
+    <h1>Nasıl Çalışır?</h1>
     
-    <Flex direction="column" gap={8}>
-      <Flex 
-        gap={6} 
-        alignItems="center" 
-        direction={{base: "column", md: "row"}}
-      >
-        <Box flex={1} textAlign={{base: "center", md: "left"}}>
-          <Heading size="md" mb={3}>1. Dokümanlarınızı Yükleyin</Heading>
-          <Text>
-            PDF, Word veya PowerPoint belgelerinizi sisteme yükleyin. 
-            OCR teknolojisi ile taranmış belgelerdeki metin otomatik olarak çıkarılır.
-          </Text>
-        </Box>
-        <Box 
-          flex={1} 
-          bg="gray.100" 
-          height="200px" 
-          borderRadius="md" 
-          display="flex" 
-          alignItems="center" 
-          justifyContent="center"
-        >
-          <i class="fas fa-cloud-upload-alt" style="font-size: 64px; color: #3182CE;"></i>
-        </Box>
-      </Flex>
-      
-      <Flex 
-        gap={6} 
-        alignItems="center" 
-        direction={{base: "column", md: "row-reverse"}}
-      >
-        <Box flex={1} textAlign={{base: "center", md: "right"}}>
-          <Heading size="md" mb={3}>2. İndeksleme ve Anlama</Heading>
-          <Text>
-            Sistem dokümanları otomatik olarak indeksler ve analiz eder. Vektör embeddingler 
-            ile belgelerinizin içeriğini ve bağlamını anlayan bir model oluşturulur.
-          </Text>
-        </Box>
-        <Box 
-          flex={1} 
-          bg="gray.100" 
-          height="200px" 
-          borderRadius="md" 
-          display="flex" 
-          alignItems="center" 
-          justifyContent="center"
-        >
-          <i class="fas fa-brain" style="font-size: 64px; color: #3182CE;"></i>
-        </Box>
-      </Flex>
-      
-      <Flex 
-        gap={6} 
-        alignItems="center" 
-        direction={{base: "column", md: "row"}}
-      >
-        <Box flex={1} textAlign={{base: "center", md: "left"}}>
-          <Heading size="md" mb={3}>3. Sorgulama ve Arama</Heading>
-          <Text>
-            Doğal dilde sorular sorun veya anahtar kelimelerle arama yapın. 
-            Semantik arama ve YZ sorgulama ile belgelerinizden hızlı ve doğru bilgiler elde edin.
-          </Text>
-        </Box>
-        <Box 
-          flex={1} 
-          bg="gray.100" 
-          height="200px" 
-          borderRadius="md" 
-          display="flex" 
-          alignItems="center" 
-          justifyContent="center"
-        >
-          <i class="fas fa-comments" style="font-size: 64px; color: #3182CE;"></i>
-        </Box>
-      </Flex>
-    </Flex>
-  </Box>
+    <div class="step">
+      <div class="step-content">
+        <h2>1. Dokümanlarınızı Yükleyin</h2>
+        <p>
+          PDF, Word veya PowerPoint belgelerinizi sisteme yükleyin. 
+          OCR teknolojisi ile taranmış belgelerdeki metin otomatik olarak çıkarılır.
+        </p>
+      </div>
+      <div class="step-image">
+        <i class="fas fa-cloud-upload-alt"></i>
+      </div>
+    </div>
+    
+    <div class="step reverse">
+      <div class="step-content">
+        <h2>2. İndeksleme ve Anlama</h2>
+        <p>
+          Sistem dokümanları otomatik olarak indeksler ve analiz eder. Vektör embeddingler 
+          ile belgelerinizin içeriğini ve bağlamını anlayan bir model oluşturulur.
+        </p>
+      </div>
+      <div class="step-image">
+        <i class="fas fa-brain"></i>
+      </div>
+    </div>
+    
+    <div class="step">
+      <div class="step-content">
+        <h2>3. Sorgulama ve Arama</h2>
+        <p>
+          Doğal dilde sorular sorun veya anahtar kelimelerle arama yapın. 
+          Semantik arama ve YZ sorgulama ile belgelerinizden hızlı ve doğru bilgiler elde edin.
+        </p>
+      </div>
+      <div class="step-image">
+        <i class="fas fa-comments"></i>
+      </div>
+    </div>
+  </section>
   
-  <Flex justifyContent="center" mt={10}>
-    <Button 
-      colorScheme="blue" 
-      size="lg" 
-      onClick={handleGetStarted}
-    >
+  <div class="cta">
+    <button class="btn-primary" on:click={handleGetStarted}>
       Şimdi Başlayın
-    </Button>
-  </Flex>
-</Box>
+    </button>
+  </div>
+</div>
+
+<style>
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+  
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+  
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #1a202c;
+  }
+  
+  .subtitle {
+    font-size: 1.25rem;
+    color: #4a5568;
+    max-width: 800px;
+    margin: 0 auto 1.5rem;
+  }
+  
+  .btn-primary {
+    background-color: #3182ce;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 1.125rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+  }
+  
+  .btn-primary:hover {
+    background-color: #2b6cb0;
+  }
+  
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 4rem;
+  }
+  
+  .feature-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    height: 100%;
+  }
+  
+  .icon {
+    font-size: 2rem;
+    color: #3182ce;
+    margin-bottom: 1rem;
+  }
+  
+  h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+    color: #1a202c;
+  }
+  
+  .how-it-works {
+    max-width: 800px;
+    margin: 0 auto 3rem;
+  }
+  
+  .how-it-works h1 {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  .step {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    align-items: center;
+  }
+  
+  .step-content {
+    flex: 1;
+  }
+  
+  .step-image {
+    flex: 1;
+    background-color: #f7fafc;
+    height: 200px;
+    border-radius: 0.375rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .step-image i {
+    font-size: 4rem;
+    color: #3182ce;
+  }
+  
+  .reverse {
+    flex-direction: row-reverse;
+  }
+  
+  .cta {
+    text-align: center;
+    margin-top: 2rem;
+  }
+  
+  @media (max-width: 768px) {
+    .step {
+      flex-direction: column;
+    }
+    
+    .reverse {
+      flex-direction: column;
+    }
+    
+    .step-content {
+      text-align: center;
+    }
+  }
+</style>

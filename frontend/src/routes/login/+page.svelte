@@ -1,149 +1,212 @@
 <script>
-  import { 
-    Box, 
-    Heading, 
-    Text, 
-    Button, 
-    Input,
-    FormControl,
-    FormLabel,
-    FormErrorMessage,
-    Alert,
-    AlertIcon,
-    Card,
-    Stack,
-    Checkbox,
-    Flex,
-    useToast
-  } from '@chakra-ui/svelte';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { user } from '../../lib/store';
   import { loginUser } from '../../lib/api';
-
-  const toast = useToast();
+  import { user, loading } from '../../lib/store';
   
-  let usernameOrEmail = '';
+  let username = '';
   let password = '';
-  let rememberMe = false;
-  let loading = false;
   let error = '';
+  let isLoading = false;
   
-  // Redirect if already logged in
   onMount(() => {
     if ($user) {
       goto('/documents');
     }
   });
   
-  async function handleLogin(e) {
-    e.preventDefault();
-    
-    if (!usernameOrEmail || !password) {
-      error = 'Please fill in all fields';
+  async function handleSubmit() {
+    if (!username || !password) {
+      error = 'Lütfen tüm alanları doldurun.';
       return;
     }
     
     try {
-      loading = true;
+      isLoading = true;
       error = '';
       
-      const userData = await loginUser(usernameOrEmail, password);
-      
-      // Update user store
+      const userData = await loginUser(username, password);
       $user = userData;
       
-      toast({
-        title: 'Login successful',
-        description: `Welcome back, ${userData.username}!`,
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-      
-      // Redirect to documents page
       goto('/documents');
-      
     } catch (err) {
-      error = err.message || 'Login failed. Please check your credentials.';
-      console.error('Login error:', err);
+      console.error('Giriş hatası:', err);
+      error = err.message || 'Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.';
     } finally {
-      loading = false;
+      isLoading = false;
     }
   }
 </script>
 
-<Box my={8} maxW="md" mx="auto">
-  <Card p={8} boxShadow="lg" borderRadius="lg">
-    <Heading size="lg" mb={6} textAlign="center">Giriş Yap</Heading>
+<div class="auth-page">
+  <div class="auth-container">
+    <div class="auth-header">
+      <h1>Giriş Yap</h1>
+      <p>Dokümanlarınıza erişmek için giriş yapın</p>
+    </div>
     
-    {#if error}
-      <Alert status="error" mb={6} borderRadius="md">
-        <AlertIcon />
-        {error}
-      </Alert>
-    {/if}
-    
-    <form on:submit={handleLogin}>
-      <Stack spacing={4}>
-        <FormControl isRequired isInvalid={error && !usernameOrEmail}>
-          <FormLabel>Kullanıcı Adı veya E-posta</FormLabel>
-          <Input 
-            type="text" 
-            bind:value={usernameOrEmail} 
-            placeholder="Kullanıcı adı veya e-posta adresinizi girin"
-            disabled={loading}
-          />
-          {#if error && !usernameOrEmail}
-            <FormErrorMessage>Kullanıcı adı veya e-posta gerekli</FormErrorMessage>
-          {/if}
-        </FormControl>
-        
-        <FormControl isRequired isInvalid={error && !password}>
-          <FormLabel>Şifre</FormLabel>
-          <Input 
-            type="password" 
-            bind:value={password} 
-            placeholder="Şifrenizi girin"
-            disabled={loading}
-          />
-          {#if error && !password}
-            <FormErrorMessage>Şifre gerekli</FormErrorMessage>
-          {/if}
-        </FormControl>
-        
-        <Flex justify="space-between" align="center">
-          <Checkbox bind:checked={rememberMe} disabled={loading}>
-            Beni hatırla
-          </Checkbox>
-          
-          <Button variant="link" size="sm" colorScheme="blue">
-            Şifremi unuttum
-          </Button>
-        </Flex>
-        
-        <Button 
-          type="submit" 
-          colorScheme="blue" 
-          size="lg" 
-          width="full"
-          isLoading={loading}
-          loadingText="Giriş yapılıyor..."
-        >
+    <form on:submit|preventDefault={handleSubmit}>
+      {#if error}
+        <div class="error-message">
+          <i class="fas fa-exclamation-circle"></i> {error}
+        </div>
+      {/if}
+      
+      <div class="form-group">
+        <label for="username">Kullanıcı Adı</label>
+        <input 
+          type="text" 
+          id="username" 
+          bind:value={username} 
+          disabled={isLoading}
+          placeholder="Kullanıcı adınızı girin"
+          autocomplete="username"
+        />
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Şifre</label>
+        <input 
+          type="password" 
+          id="password" 
+          bind:value={password} 
+          disabled={isLoading}
+          placeholder="Şifrenizi girin"
+          autocomplete="current-password"
+        />
+      </div>
+      
+      <button 
+        type="submit" 
+        class="btn-primary" 
+        disabled={isLoading}
+      >
+        {#if isLoading}
+          <i class="fas fa-spinner fa-spin"></i> Giriş Yapılıyor...
+        {:else}
           Giriş Yap
-        </Button>
-      </Stack>
+        {/if}
+      </button>
     </form>
     
-    <Text mt={6} textAlign="center">
-      Hesabınız yok mu?{' '}
-      <Button 
-        variant="link" 
-        colorScheme="blue" 
-        onClick={() => goto('/register')}
-      >
-        Kayıt Ol
-      </Button>
-    </Text>
-  </Card>
-</Box>
+    <div class="auth-footer">
+      <p>Hesabınız yok mu? <a href="/register">Kaydolun</a></p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .auth-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 150px);
+    padding: 2rem 1rem;
+  }
+  
+  .auth-container {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  .auth-header h1 {
+    font-size: 1.75rem;
+    margin: 0 0 0.5rem;
+  }
+  
+  .auth-header p {
+    color: #718096;
+    margin: 0;
+  }
+  
+  form {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+  
+  input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    font-size: 1rem;
+  }
+  
+  input:focus {
+    outline: none;
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.2);
+  }
+  
+  .btn-primary {
+    width: 100%;
+    background-color: #3182ce;
+    color: white;
+    border: none;
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .btn-primary:hover {
+    background-color: #2b6cb0;
+  }
+  
+  .btn-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+  
+  .error-message {
+    background-color: #fed7d7;
+    color: #c53030;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .auth-footer {
+    text-align: center;
+    color: #718096;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 1.5rem;
+  }
+  
+  .auth-footer a {
+    color: #3182ce;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  
+  .auth-footer a:hover {
+    text-decoration: underline;
+  }
+</style>

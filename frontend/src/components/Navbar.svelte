@@ -1,145 +1,151 @@
 <script>
-  import { 
-    Box, 
-    Flex, 
-    Spacer, 
-    Button, 
-    Menu, 
-    MenuButton, 
-    MenuList, 
-    MenuItem, 
-    MenuDivider, 
-    Avatar, 
-    IconButton
-  } from '@chakra-ui/svelte';
   import { user } from '../lib/store';
   import { goto } from '$app/navigation';
   
-  // Handle logout
   function logout() {
-    // Clear token from localStorage
-    localStorage.removeItem('token');
-    
-    // Clear user store
+    // Clear token
+    localStorage?.removeItem('token');
+    // Reset user store
     $user = null;
-    
     // Redirect to home
     goto('/');
   }
-  
-  // Function to navigate
-  function navigateTo(path) {
-    goto(path);
-  }
-  
-  // Get user initials for avatar
-  function getUserInitials(username) {
-    if (!username) return '?';
-    return username.substring(0, 2).toUpperCase();
-  }
 </script>
 
-<Box
-  bg="blue.600"
-  px={4}
-  boxShadow="md"
-  position="sticky"
-  top={0}
-  zIndex={10}
->
-  <Flex h={16} alignItems="center">
-    <!-- Logo/Brand -->
-    <Box 
-      fontWeight="bold" 
-      fontSize="xl" 
-      color="white" 
-      cursor="pointer"
-      onClick={() => navigateTo('/')}
-    >
-      <i class="fas fa-search-document mr-2"></i>
-      Doküman Arama
-    </Box>
-    
-    <Spacer />
-    
-    <!-- Navigation Links (only when logged in) -->
+<nav>
+  <div class="logo">
+    <a href="/">DocuSearch</a>
+  </div>
+  
+  <ul class="nav-links">
     {#if $user}
-      <Flex align="center" mr={4} display={{ base: 'none', md: 'flex' }}>
-        <Button
-          variant="ghost"
-          color="white"
-          mr={4}
-          _hover={{ bg: 'blue.500' }}
-          onClick={() => navigateTo('/documents')}
-        >
-          <i class="fas fa-file-alt mr-2"></i> Dokümanlar
-        </Button>
-        
-        <Button
-          variant="ghost"
-          color="white"
-          mr={4}
-          _hover={{ bg: 'blue.500' }}
-          onClick={() => navigateTo('/search')}
-        >
-          <i class="fas fa-search mr-2"></i> Arama
-        </Button>
-        
-        <Button
-          variant="ghost"
-          color="white"
-          _hover={{ bg: 'blue.500' }}
-          onClick={() => navigateTo('/query')}
-        >
-          <i class="fas fa-robot mr-2"></i> Sorgulama
-        </Button>
-      </Flex>
-    {/if}
-    
-    <!-- Login/Register buttons or User menu -->
-    {#if $user}
-      <Menu>
-        <MenuButton
-          as={IconButton}
-          size="md"
-          borderRadius="full"
-          aria-label="User menu"
-          icon={<Avatar size="sm" name={$user.username} bg="blue.300" color="white" />}
-        />
-        <MenuList>
-          <Box px={4} py={2}>
-            <Box fontWeight="bold">{$user.username}</Box>
-            <Box fontSize="sm" opacity={0.8}>{$user.email}</Box>
-          </Box>
-          <MenuDivider />
-          <MenuItem icon={<i class="fas fa-user" />} onClick={() => navigateTo('/profile')}>
-            Profil
-          </MenuItem>
-          <MenuItem icon={<i class="fas fa-cog" />} onClick={() => navigateTo('/settings')}>
-            Ayarlar
-          </MenuItem>
-          <MenuDivider />
-          <MenuItem icon={<i class="fas fa-sign-out-alt" />} onClick={logout}>
-            Çıkış Yap
-          </MenuItem>
-        </MenuList>
-      </Menu>
+      <li><a href="/documents">Dokümanlarım</a></li>
+      <li><a href="/search">Arama</a></li>
+      <li><a href="/query">Sorgulama</a></li>
+      <li class="dropdown">
+        <button class="user-btn">
+          <i class="fas fa-user-circle"></i> {$user.username}
+        </button>
+        <div class="dropdown-content">
+          <a href="/profile">Profil</a>
+          <button on:click={logout}>Çıkış Yap</button>
+        </div>
+      </li>
     {:else}
-      <Button 
-        variant="outline" 
-        colorScheme="whiteAlpha" 
-        mr={4}
-        onClick={() => navigateTo('/login')}
-      >
-        Giriş Yap
-      </Button>
-      
-      <Button 
-        colorScheme="whiteAlpha" 
-        onClick={() => navigateTo('/register')}
-      >
-        Kayıt Ol
-      </Button>
+      <li><a href="/login">Giriş Yap</a></li>
+      <li><a href="/register">Kaydol</a></li>
     {/if}
-  </Flex>
-</Box>
+  </ul>
+</nav>
+
+<style>
+  nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .logo a {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #3182ce;
+    text-decoration: none;
+  }
+  
+  .nav-links {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    align-items: center;
+  }
+  
+  .nav-links li {
+    margin-left: 1.5rem;
+  }
+  
+  .nav-links a {
+    color: #4a5568;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  
+  .nav-links a:hover {
+    color: #3182ce;
+  }
+  
+  .dropdown {
+    position: relative;
+  }
+  
+  .user-btn {
+    background: none;
+    border: none;
+    font-weight: 500;
+    color: #4a5568;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: white;
+    min-width: 160px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+    border-radius: 0.375rem;
+    overflow: hidden;
+  }
+  
+  .dropdown-content a,
+  .dropdown-content button {
+    display: block;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    width: 100%;
+    background: none;
+    border: none;
+    font-size: 1rem;
+    color: #4a5568;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  
+  .dropdown-content a:hover,
+  .dropdown-content button:hover {
+    background-color: #f7fafc;
+    color: #3182ce;
+  }
+  
+  .dropdown:hover .dropdown-content {
+    display: block;
+  }
+  
+  @media (max-width: 768px) {
+    nav {
+      flex-direction: column;
+      padding: 1rem;
+    }
+    
+    .logo {
+      margin-bottom: 1rem;
+    }
+    
+    .nav-links {
+      width: 100%;
+      justify-content: space-around;
+    }
+    
+    .nav-links li {
+      margin: 0;
+    }
+  }
+</style>

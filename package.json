@@ -1,0 +1,19 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.0",
+    "@sveltejs/kit": "^2.20.5",
+    "drizzle-orm": "^0.41.0",
+    "openai": "^4.93.0",
+    "svelte": "^5.26.2"
+  }
+}

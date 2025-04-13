@@ -1,18 +1,8 @@
 import { Client } from 'minio';
-import crypto from 'crypto';
-import stream from 'stream';
-import { Readable } from 'stream';
-import {
-  MINIO_ENDPOINT,
-  MINIO_PORT,
-  MINIO_ACCESS_KEY,
-  MINIO_SECRET_KEY,
-  MINIO_USE_SSL,
-  MINIO_BUCKET_NAME
-} from '../../config';
+import { MINIO_ENDPOINT, MINIO_PORT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_USE_SSL, MINIO_BUCKET_NAME } from '../../config';
 
-// Initialize MinIO client
-const minioClient = new Client({
+// Configure MinIO client
+export const minioClient = new Client({
   endPoint: MINIO_ENDPOINT,
   port: MINIO_PORT,
   useSSL: MINIO_USE_SSL,
@@ -20,106 +10,105 @@ const minioClient = new Client({
   secretKey: MINIO_SECRET_KEY,
 });
 
-/**
- * Initialize MinIO bucket
- */
-export async function initializeBucket() {
+// Initialize MinIO connection and create bucket if not exists
+export async function initializeMinIO() {
   try {
-    // Check if bucket exists
-    const exists = await minioClient.bucketExists(MINIO_BUCKET_NAME);
-    
-    if (!exists) {
-      // Create bucket if it doesn't exist
+    const bucketExists = await minioClient.bucketExists(MINIO_BUCKET_NAME);
+    if (!bucketExists) {
       await minioClient.makeBucket(MINIO_BUCKET_NAME, 'us-east-1');
-      console.log(`Created bucket ${MINIO_BUCKET_NAME}`);
-      
-      // Set bucket policy to allow document downloads
-      const policy = {
-        Version: '2012-10-17',
-        Statement: [
-          {
-            Effect: 'Allow',
-            Principal: { AWS: ['*'] },
-            Action: ['s3:GetObject'],
-            Resource: [`arn:aws:s3:::${MINIO_BUCKET_NAME}/*`],
-          },
-        ],
-      };
-      
-      await minioClient.setBucketPolicy(MINIO_BUCKET_NAME, JSON.stringify(policy));
+      console.log(`Bucket '${MINIO_BUCKET_NAME}' created successfully`);
     } else {
-      console.log(`Bucket ${MINIO_BUCKET_NAME} already exists`);
+      console.log(`Bucket '${MINIO_BUCKET_NAME}' already exists`);
     }
+
+    // Set bucket policy to allow public read access
+    const policy = {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Effect: 'Allow',
+          Principal: { AWS: ['*'] },
+          Action: ['s3:GetObject'],
+          Resource: [`arn:aws:s3:::${MINIO_BUCKET_NAME}/*`],
+        },
+      ],
+    };
+
+    await minioClient.setBucketPolicy(MINIO_BUCKET_NAME, JSON.stringify(policy));
+    console.log(`Bucket policy has been set for '${MINIO_BUCKET_NAME}'`);
     
+    console.log('MinIO initialized successfully');
+    return true;
   } catch (error) {
-    console.error('MinIO initialization error:', error);
-    throw new Error(`Failed to initialize MinIO bucket: ${error.message}`);
+    console.error('Error initializing MinIO:', error);
+    throw error;
   }
 }
 
-/**
- * Upload a file to MinIO
- * 
- * @param file The file to upload
- * @returns The storage key (object name)
- */
-export async function uploadFile(file: any): Promise<string> {
-  try {
-    // Generate a unique object name
-    const hash = crypto.createHash('md5').update(Date.now().toString()).digest('hex');
-    const objectName = `${hash}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+// Upload a file to MinIO
+export async function uploadFile(buffer: Buffer, fileName: string, contentType: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const timestamp = Date.now();
+    const objectName = `${timestamp}_${fileName}`;
     
-    // Create a buffer from the file
-    const buffer = Buffer.from(await file.arrayBuffer());
-    
-    // Upload the file
-    await minioClient.putObject(
+    minioClient.putObject(
       MINIO_BUCKET_NAME,
       objectName,
       buffer,
       buffer.length,
-      { 'Content-Type': file.type }
+      { 'Content-Type': contentType },
+      (err, etag) => {
+        if (err) {
+          console.error('Error uploading file to MinIO:', err);
+          return reject(err);
+        }
+        console.log(`File uploaded successfully with etag: ${etag}`);
+        resolve(objectName);
+      }
     );
-    
-    console.log(`File uploaded successfully as ${objectName}`);
-    
-    return objectName;
-    
-  } catch (error) {
-    console.error('MinIO upload error:', error);
-    throw new Error(`File upload failed: ${error.message}`);
-  }
+  });
 }
 
-/**
- * Download a file from MinIO
- * 
- * @param objectName The storage key (object name)
- * @returns A readable stream of the file content
- */
-export async function downloadFile(objectName: string): Promise<Readable> {
+// Get a presigned URL for downloading a file
+export async function getPresignedUrl(objectName: string, expiryInSeconds = 3600): Promise<string> {
   try {
-    // Get the object as a stream
-    return await minioClient.getObject(MINIO_BUCKET_NAME, objectName);
-    
+    const url = await minioClient.presignedGetObject(MINIO_BUCKET_NAME, objectName, expiryInSeconds);
+    return url;
   } catch (error) {
-    console.error('MinIO download error:', error);
-    throw new Error(`File download failed: ${error.message}`);
+    console.error('Error generating presigned URL:', error);
+    throw error;
   }
 }
 
-/**
- * Delete a file from MinIO
- * 
- * @param objectName The storage key (object name)
- */
-export async function deleteFile(objectName: string): Promise<void> {
+// Delete a file from MinIO
+export async function deleteFile(objectName: string): Promise<boolean> {
   try {
     await minioClient.removeObject(MINIO_BUCKET_NAME, objectName);
     console.log(`File ${objectName} deleted successfully`);
-    
+    return true;
   } catch (error) {
-    console.error('MinIO delete error:', error);
-    throw new Error(`File deletion failed: ${error.message}`);
+    console.error(`Error deleting file ${objectName}:`, error);
+    throw error;
   }
+}
+
+// List all files in a directory
+export async function listFiles(prefix: string): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    const objectsList: string[] = [];
+    const stream = minioClient.listObjects(MINIO_BUCKET_NAME, prefix, true);
+    
+    stream.on('data', (obj) => {
+      objectsList.push(obj.name);
+    });
+    
+    stream.on('error', (err) => {
+      console.error('Error listing files:', err);
+      reject(err);
+    });
+    
+    stream.on('end', () => {
+      resolve(objectsList);
+    });
+  });
 }

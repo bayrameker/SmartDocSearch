@@ -1,31 +1,56 @@
-import fetch from 'node-fetch';
-import { DOCUMENT_PROCESSING_URL } from '../../config';
 import { ProcessDocumentRequest } from '../../shared/types';
+import { DOCUMENT_PROCESSING_URL } from '../../config';
 
 /**
- * Send a document to the document processing service
+ * Send document to processing service
  * 
- * @param params Document processing parameters
+ * @param data Document processing request data
+ * @returns Processing response
  */
-export async function sendToDocumentProcessing(params: ProcessDocumentRequest): Promise<void> {
+export async function sendToDocumentProcessing(data: ProcessDocumentRequest): Promise<any> {
   try {
     const response = await fetch(`${DOCUMENT_PROCESSING_URL}/process`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(params),
+      body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Document processing service returned error: ${errorData.error || response.statusText}`);
+      throw new Error(`Failed to send document for processing: ${response.statusText}`);
     }
-    
-    const data = await response.json();
-    console.log(`Document ${params.documentId} sent to processing service:`, data);
+
+    return response.json();
   } catch (error) {
-    console.error(`Error sending document ${params.documentId} to processing service:`, error);
+    console.error('Error sending document to processing service:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check document processing status
+ * 
+ * @param documentId Document ID
+ * @returns Processing status
+ */
+export async function checkProcessingStatus(documentId: number): Promise<any> {
+  try {
+    const response = await fetch(`${DOCUMENT_PROCESSING_URL}/status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ documentId }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to check document processing status: ${response.statusText}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Error checking document processing status:', error);
     throw error;
   }
 }

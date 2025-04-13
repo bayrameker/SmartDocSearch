@@ -1,58 +1,27 @@
 import fastify from 'fastify';
-import { Client } from 'minio';
-import { MINIO_ENDPOINT, MINIO_PORT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_USE_SSL, MINIO_BUCKET_NAME, STORAGE_SERVICE_URL } from '../../config';
-import { sendToDocumentProcessing } from './document-processing';
+import multer from 'fastify-multer';
+import cors from '@fastify/cors';
+import { STORAGE_SERVICE_URL } from '../../config';
+import { sendToDocumentProcessing, checkProcessingStatus } from './document-processing';
+import { initializeMinIO, uploadFile, getPresignedUrl, deleteFile, listFiles } from './minio';
+import { createDocument, getDocumentById, getDocumentsByUserId, updateDocumentStatus, deleteDocumentById } from './db';
 
 const server = fastify({
   logger: true
 });
 
+// Register plugins
+server.register(cors, {
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+});
+
+server.register(multer.contentParser);
+
 // Extract the port from the URL
 const url = new URL(STORAGE_SERVICE_URL);
 const port = parseInt(url.port, 10) || 8003;
-
-// Configure MinIO client
-const minioClient = new Client({
-  endPoint: MINIO_ENDPOINT,
-  port: MINIO_PORT,
-  useSSL: MINIO_USE_SSL,
-  accessKey: MINIO_ACCESS_KEY,
-  secretKey: MINIO_SECRET_KEY,
-});
-
-// Initialize MinIO connection and create bucket if not exists
-async function initializeMinIO() {
-  try {
-    const bucketExists = await minioClient.bucketExists(MINIO_BUCKET_NAME);
-    if (!bucketExists) {
-      await minioClient.makeBucket(MINIO_BUCKET_NAME, 'us-east-1');
-      console.log(`Bucket '${MINIO_BUCKET_NAME}' created successfully`);
-    } else {
-      console.log(`Bucket '${MINIO_BUCKET_NAME}' already exists`);
-    }
-
-    // Set bucket policy to allow public read access
-    const policy = {
-      Version: '2012-10-17',
-      Statement: [
-        {
-          Effect: 'Allow',
-          Principal: { AWS: ['*'] },
-          Action: ['s3:GetObject'],
-          Resource: [`arn:aws:s3:::${MINIO_BUCKET_NAME}/*`],
-        },
-      ],
-    };
-
-    await minioClient.setBucketPolicy(MINIO_BUCKET_NAME, JSON.stringify(policy));
-    console.log(`Bucket policy has been set for '${MINIO_BUCKET_NAME}'`);
-    
-    console.log('MinIO initialized successfully');
-  } catch (error) {
-    console.error('Error initializing MinIO:', error);
-    throw error;
-  }
-}
 
 // Initialize MinIO
 initializeMinIO().catch(err => {
@@ -60,41 +29,64 @@ initializeMinIO().catch(err => {
   process.exit(1);
 });
 
+// Configure file upload
+const upload = multer({
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit
+  },
+});
+
 // Define routes
-server.post('/upload', async (request, reply) => {
+server.post('/upload', { preHandler: upload.single('file') }, async (request, reply) => {
   try {
-    // TODO: Implement file upload
-    const { userId, file, fileName } = request.body as any;
+    const file = request.file;
+    const { userId } = request.body as { userId: string };
     
-    if (!userId || !file || !fileName) {
+    if (!userId || !file) {
       return reply.code(400).send({
         success: false,
         error: 'Missing required fields'
       });
     }
     
-    // Generate a unique storage key
-    const fileExtension = fileName.split('.').pop();
-    const timestamp = Date.now();
-    const storageKey = `${userId}/${timestamp}_${fileName}`;
+    // Get file info
+    const fileName = file.originalname;
+    const fileBuffer = file.buffer;
+    const mimeType = file.mimetype;
+    const fileSize = file.size;
+    const fileExtension = fileName.split('.').pop() || '';
     
-    // TODO: Upload file to MinIO
+    // Upload file to MinIO
+    const storageKey = await uploadFile(fileBuffer, `${userId}/${fileName}`, mimeType);
     
     // Create document record in database
-    const documentId = 1; // TODO: Insert into database
+    const userIdNumber = parseInt(userId, 10);
+    const newDocument = await createDocument({
+      userId: userIdNumber,
+      title: fileName,
+      fileName: fileName,
+      fileSize: fileSize,
+      fileType: fileExtension,
+      storageKey: storageKey,
+      status: 'uploaded',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
     
     // Send to document processing service
     await sendToDocumentProcessing({
-      documentId,
-      storageKey,
-      fileName,
-      mimeType: `application/${fileExtension}`
+      documentId: newDocument.id,
+      storageKey: storageKey,
+      fileName: fileName,
+      mimeType: mimeType
     });
+    
+    // Update document status to 'processing'
+    await updateDocumentStatus(newDocument.id, 'processing');
     
     return reply.code(200).send({
       success: true,
-      documentId,
-      storageKey
+      document: newDocument
     });
   } catch (error) {
     server.log.error('Error uploading file', error);
@@ -105,25 +97,183 @@ server.post('/upload', async (request, reply) => {
   }
 });
 
-server.get('/download/:key', async (request, reply) => {
+server.get('/document/:id', async (request, reply) => {
   try {
-    const { key } = request.params as { key: string };
+    const { id } = request.params as { id: string };
+    const documentId = parseInt(id, 10);
     
-    if (!key) {
+    if (isNaN(documentId)) {
       return reply.code(400).send({
         success: false,
-        error: 'Missing storage key'
+        error: 'Invalid document ID'
       });
     }
     
-    // TODO: Implement file download from MinIO
+    const document = await getDocumentById(documentId);
+    
+    if (!document) {
+      return reply.code(404).send({
+        success: false,
+        error: 'Document not found'
+      });
+    }
     
     return reply.code(200).send({
       success: true,
-      url: `https://${MINIO_ENDPOINT}:${MINIO_PORT}/${MINIO_BUCKET_NAME}/${key}`
+      document
     });
   } catch (error) {
-    server.log.error('Error downloading file', error);
+    server.log.error('Error getting document', error);
+    return reply.code(500).send({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+server.get('/documents/user/:userId', async (request, reply) => {
+  try {
+    const { userId } = request.params as { userId: string };
+    const userIdNumber = parseInt(userId, 10);
+    
+    if (isNaN(userIdNumber)) {
+      return reply.code(400).send({
+        success: false,
+        error: 'Invalid user ID'
+      });
+    }
+    
+    const { limit = '10', offset = '0' } = request.query as { limit?: string, offset?: string };
+    const limitNumber = parseInt(limit, 10);
+    const offsetNumber = parseInt(offset, 10);
+    
+    const documents = await getDocumentsByUserId(userIdNumber, limitNumber, offsetNumber);
+    
+    return reply.code(200).send({
+      success: true,
+      documents,
+      total: documents.length,
+      limit: limitNumber,
+      offset: offsetNumber
+    });
+  } catch (error) {
+    server.log.error('Error getting user documents', error);
+    return reply.code(500).send({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+server.get('/download/:id', async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const documentId = parseInt(id, 10);
+    
+    if (isNaN(documentId)) {
+      return reply.code(400).send({
+        success: false,
+        error: 'Invalid document ID'
+      });
+    }
+    
+    const document = await getDocumentById(documentId);
+    
+    if (!document) {
+      return reply.code(404).send({
+        success: false,
+        error: 'Document not found'
+      });
+    }
+    
+    // Get a presigned URL for the document
+    const presignedUrl = await getPresignedUrl(document.storageKey);
+    
+    return reply.code(200).send({
+      success: true,
+      url: presignedUrl,
+      document
+    });
+  } catch (error) {
+    server.log.error('Error generating download URL', error);
+    return reply.code(500).send({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+server.delete('/document/:id', async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const documentId = parseInt(id, 10);
+    
+    if (isNaN(documentId)) {
+      return reply.code(400).send({
+        success: false,
+        error: 'Invalid document ID'
+      });
+    }
+    
+    const document = await getDocumentById(documentId);
+    
+    if (!document) {
+      return reply.code(404).send({
+        success: false,
+        error: 'Document not found'
+      });
+    }
+    
+    // Delete the file from MinIO
+    await deleteFile(document.storageKey);
+    
+    // Delete the document record from database
+    const deleted = await deleteDocumentById(documentId);
+    
+    return reply.code(200).send({
+      success: true,
+      deleted
+    });
+  } catch (error) {
+    server.log.error('Error deleting document', error);
+    return reply.code(500).send({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+server.get('/status/:id', async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const documentId = parseInt(id, 10);
+    
+    if (isNaN(documentId)) {
+      return reply.code(400).send({
+        success: false,
+        error: 'Invalid document ID'
+      });
+    }
+    
+    const document = await getDocumentById(documentId);
+    
+    if (!document) {
+      return reply.code(404).send({
+        success: false,
+        error: 'Document not found'
+      });
+    }
+    
+    // Check processing status
+    const processingStatus = await checkProcessingStatus(documentId);
+    
+    return reply.code(200).send({
+      success: true,
+      document,
+      processingStatus
+    });
+  } catch (error) {
+    server.log.error('Error checking document status', error);
     return reply.code(500).send({
       success: false,
       error: 'Internal server error'

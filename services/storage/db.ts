@@ -1,179 +1,137 @@
-import { Pool } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { eq, sql } from 'drizzle-orm';
-import ws from 'ws';
-import { DATABASE_URL } from '../../config';
-import * as schema from '../../shared/schema';
-
-// Configuration for Neon serverless Postgres
-const neonConfig = {
-  webSocketConstructor: ws,
-};
-
-// Create database pool and connection
-const pool = new Pool({ connectionString: DATABASE_URL });
-const db = drizzle(pool, { schema });
+import { db } from '../../server/db';
+import { documents, type InsertDocument } from '../../shared/schema';
+import { eq } from 'drizzle-orm';
 
 /**
- * Initialize the database connection and ensure tables exist
- */
-export async function initializeDatabase() {
-  try {
-    // Check connection by running a simple query
-    const result = await pool.query('SELECT 1');
-    
-    if (result.rows[0]['?column?'] === 1) {
-      console.log('Database connection successful');
-    }
-    
-    // Note: In a production environment, you would use proper migrations
-    // instead of this simple check. For this example, we're assuming
-    // the schema already exists or will be created externally.
-    
-  } catch (error) {
-    console.error('Database initialization error:', error);
-    throw new Error(`Failed to initialize database: ${error.message}`);
-  }
-}
-
-/**
- * Save document metadata to database
+ * Create a new document record in the database
  * 
- * @param documentData Document metadata to save
- * @returns Saved document
+ * @param documentData Document data to insert
+ * @returns Created document
  */
-export async function saveDocumentMetadata(documentData: {
-  userId: number;
-  title: string;
-  filename: string;
-  mimeType: string;
-  storageKey: string;
-}) {
+export async function createDocument(documentData: InsertDocument) {
   try {
-    const [document] = await db
-      .insert(schema.documents)
-      .values({
-        userId: documentData.userId,
-        title: documentData.title,
-        filename: documentData.filename,
-        mimeType: documentData.mimeType,
-        storageKey: documentData.storageKey,
-        status: 'processing',
-      })
+    const [newDocument] = await db.insert(documents)
+      .values(documentData)
       .returning();
     
-    return document;
-    
+    return newDocument;
   } catch (error) {
-    console.error('Error saving document metadata:', error);
-    throw new Error(`Failed to save document metadata: ${error.message}`);
+    console.error('Error creating document record:', error);
+    throw error;
   }
 }
 
 /**
  * Get document by ID
  * 
- * @param id Document ID
+ * @param documentId Document ID
  * @returns Document or undefined if not found
  */
-export async function getDocument(id: number) {
+export async function getDocumentById(documentId: number) {
   try {
     const [document] = await db
       .select()
-      .from(schema.documents)
-      .where(eq(schema.documents.id, id));
+      .from(documents)
+      .where(eq(documents.id, documentId));
     
     return document;
-    
   } catch (error) {
-    console.error('Error getting document:', error);
-    throw new Error(`Failed to get document: ${error.message}`);
+    console.error('Error getting document by ID:', error);
+    throw error;
   }
 }
 
 /**
- * List documents with pagination
+ * Get documents by user ID
  * 
- * @param userId Optional user ID to filter by
- * @param page Page number
- * @param limit Results per page
- * @returns List of documents and total count
+ * @param userId User ID
+ * @param limit Result limit
+ * @param offset Result offset
+ * @returns Documents belonging to the user
  */
-export async function listDocuments(
-  userId?: number,
-  page: number = 1,
-  limit: number = 10
-) {
+export async function getDocumentsByUserId(userId: number, limit = 10, offset = 0) {
   try {
-    const offset = (page - 1) * limit;
-    
-    let query = db.select().from(schema.documents);
-    
-    if (userId) {
-      query = query.where(eq(schema.documents.userId, userId));
-    }
-    
-    const documents = await query
+    const results = await db
+      .select()
+      .from(documents)
+      .where(eq(documents.userId, userId))
       .limit(limit)
       .offset(offset)
-      .orderBy(sql`${schema.documents.createdAt} desc`);
+      .orderBy(documents.createdAt);
     
-    // Count total documents
-    const [{ count }] = await db
-      .select({ count: sql`count(*)`.mapWith(Number) })
-      .from(schema.documents)
-      .where(userId ? eq(schema.documents.userId, userId) : undefined);
-    
-    return {
-      documents,
-      total: count,
-    };
-    
+    return results;
   } catch (error) {
-    console.error('Error listing documents:', error);
-    throw new Error(`Failed to list documents: ${error.message}`);
+    console.error('Error getting documents by user ID:', error);
+    throw error;
   }
 }
 
 /**
  * Update document status
  * 
- * @param id Document ID
+ * @param documentId Document ID
  * @param status New status
- * @returns Updated document or undefined if not found
+ * @returns Updated document
  */
-export async function updateDocumentStatus(id: number, status: string) {
+export async function updateDocumentStatus(documentId: number, status: string) {
   try {
-    const [document] = await db
-      .update(schema.documents)
+    const [updatedDocument] = await db
+      .update(documents)
       .set({ 
         status,
-        updatedAt: new Date(),
+        updatedAt: new Date()
       })
-      .where(eq(schema.documents.id, id))
+      .where(eq(documents.id, documentId))
       .returning();
     
-    return document;
-    
+    return updatedDocument;
   } catch (error) {
     console.error('Error updating document status:', error);
-    throw new Error(`Failed to update document status: ${error.message}`);
+    throw error;
   }
 }
 
 /**
- * Delete document from database
+ * Update document metadata
  * 
- * @param id Document ID
+ * @param documentId Document ID
+ * @param metadata Document metadata
+ * @returns Updated document
  */
-export async function deleteDocument(id: number) {
+export async function updateDocumentMetadata(documentId: number, metadata: any) {
   try {
-    await db
-      .delete(schema.documents)
-      .where(eq(schema.documents.id, id));
+    const [updatedDocument] = await db
+      .update(documents)
+      .set({ 
+        metadata,
+        updatedAt: new Date()
+      })
+      .where(eq(documents.id, documentId))
+      .returning();
     
+    return updatedDocument;
+  } catch (error) {
+    console.error('Error updating document metadata:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete document by ID
+ * 
+ * @param documentId Document ID
+ * @returns Whether the document was deleted
+ */
+export async function deleteDocumentById(documentId: number) {
+  try {
+    const [deletedDocument] = await db
+      .delete(documents)
+      .where(eq(documents.id, documentId))
+      .returning();
+    
+    return !!deletedDocument;
   } catch (error) {
     console.error('Error deleting document:', error);
-    throw new Error(`Failed to delete document: ${error.message}`);
+    throw error;
   }
 }

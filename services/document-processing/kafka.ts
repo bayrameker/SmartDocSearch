@@ -1,25 +1,38 @@
-import { Kafka } from 'kafkajs';
+import { Kafka, Consumer, Producer } from 'kafkajs';
 import { KAFKA_BROKERS } from '../../config';
 
-// Create Kafka client
+// Kafka client
 const kafka = new Kafka({
   clientId: 'document-processing-service',
-  brokers: KAFKA_BROKERS
+  brokers: KAFKA_BROKERS,
 });
 
-// Create producer
-const producer = kafka.producer();
+// Kafka producer
+let producer: Producer;
 
-/**
- * Initialize Kafka connection
- */
+// Kafka consumer
+let consumer: Consumer;
+
+// Initialize Kafka
 export async function initializeKafka() {
   try {
-    console.log('Connecting to Kafka...');
+    // Create producer
+    producer = kafka.producer();
     await producer.connect();
-    console.log('Connected to Kafka successfully');
+    console.log('Kafka producer connected');
+
+    // Create consumer
+    consumer = kafka.consumer({ groupId: 'document-processing-group' });
+    await consumer.connect();
+    console.log('Kafka consumer connected');
+
+    // Subscribe to topics
+    await consumer.subscribe({ topic: 'document-uploaded', fromBeginning: true });
+    console.log('Subscribed to document-uploaded topic');
+
+    return { producer, consumer };
   } catch (error) {
-    console.error('Failed to connect to Kafka:', error);
+    console.error('Error initializing Kafka:', error);
     throw error;
   }
 }
@@ -27,44 +40,99 @@ export async function initializeKafka() {
 /**
  * Send a message to a Kafka topic
  * 
- * @param topic The Kafka topic to publish to
- * @param message The message to publish
+ * @param topic Kafka topic
+ * @param message Message to send
+ * @returns Send result
  */
 export async function sendToKafka(topic: string, message: any) {
   try {
-    // Reconnect to Kafka if needed (Producer doesn't have isConnected property)
-    try {
-      await producer.connect();
-    } catch (e) {
-      // Already connected, this is fine
+    if (!producer) {
+      throw new Error('Kafka producer not initialized');
     }
-    
-    await producer.send({
+
+    const result = await producer.send({
       topic,
       messages: [
         { 
           value: JSON.stringify(message),
-          timestamp: Date.now().toString()
+          timestamp: Date.now().toString(),
         },
       ],
     });
-    
-    console.log(`Message sent to topic ${topic}`);
+
+    console.log(`Message sent to topic ${topic}:`, result);
+    return result;
   } catch (error) {
     console.error(`Error sending message to topic ${topic}:`, error);
     throw error;
   }
 }
 
-// Handle graceful shutdown
+/**
+ * Start Kafka consumer with message handler
+ * 
+ * @param messageHandler Function to handle incoming messages
+ */
+export async function startConsumer(messageHandler: (message: any) => Promise<void>) {
+  try {
+    if (!consumer) {
+      throw new Error('Kafka consumer not initialized');
+    }
+
+    await consumer.run({
+      eachMessage: async ({ topic, partition, message }) => {
+        try {
+          if (!message.value) {
+            console.warn('Received message with no value');
+            return;
+          }
+
+          const value = JSON.parse(message.value.toString());
+          console.log(`Received message from topic ${topic}:`, value);
+          
+          await messageHandler(value);
+        } catch (error) {
+          console.error('Error processing message:', error);
+        }
+      },
+    });
+
+    console.log('Kafka consumer started');
+  } catch (error) {
+    console.error('Error starting Kafka consumer:', error);
+    throw error;
+  }
+}
+
+/**
+ * Disconnect from Kafka
+ */
+export async function disconnectKafka() {
+  try {
+    if (producer) {
+      await producer.disconnect();
+      console.log('Kafka producer disconnected');
+    }
+    
+    if (consumer) {
+      await consumer.disconnect();
+      console.log('Kafka consumer disconnected');
+    }
+  } catch (error) {
+    console.error('Error disconnecting from Kafka:', error);
+    throw error;
+  }
+}
+
+// Handle process termination
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, closing Kafka producer');
-  await producer.disconnect();
+  console.log('SIGTERM received, shutting down Kafka connections');
+  await disconnectKafka();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  console.log('SIGINT received, closing Kafka producer');
-  await producer.disconnect();
+  console.log('SIGINT received, shutting down Kafka connections');
+  await disconnectKafka();
   process.exit(0);
 });

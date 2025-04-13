@@ -173,17 +173,28 @@ export async function getDocument(id: number) {
 export async function uploadDocument(formData: FormData) {
   const token = getToken();
   
+  console.log('FormData yükleniyor:', formData);
+  console.log('Dosya:', formData.get('file'));
+  console.log('Başlık:', formData.get('title'));
+  
   const response = await fetch(`${API_GATEWAY_URL}/documents/upload`, {
     method: 'POST',
     headers: {
       'Authorization': token ? `Bearer ${token}` : '',
+      // FormData için Content-Type header'ı belirtmiyoruz, browser kendisi ekleyecek
     },
     body: formData,
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Belge yükleme başarısız oldu');
+    let errorMessage = 'Belge yükleme başarısız oldu';
+    try {
+      const error = await response.json();
+      errorMessage = error.error || error.message || errorMessage;
+    } catch (e) {
+      console.error('Hata yanıtı ayrıştırılamadı:', e);
+    }
+    throw new Error(errorMessage);
   }
 
   return response.json();

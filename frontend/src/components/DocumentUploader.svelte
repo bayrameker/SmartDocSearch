@@ -50,8 +50,8 @@
   async function handleUpload() {
     if (!selectedFile) {
       toast({
-        title: 'No file selected',
-        description: 'Please select a file to upload',
+        title: 'Dosya seçilmedi',
+        description: 'Lütfen yüklemek için bir dosya seçin',
         status: 'warning',
         duration: 3000,
         isClosable: true,
@@ -61,8 +61,8 @@
     
     if (!title.trim()) {
       toast({
-        title: 'Title required',
-        description: 'Please provide a title for the document',
+        title: 'Başlık gerekli',
+        description: 'Lütfen belge için bir başlık girin',
         status: 'warning',
         duration: 3000,
         isClosable: true,
@@ -70,25 +70,35 @@
       return;
     }
     
+    let progressInterval;
+    
     try {
       uploading = true;
       error = null;
       
+      // FormData oluştur
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('title', title);
+      
+      console.log('Yükleniyor:', { fileName: selectedFile.name, fileSize: selectedFile.size, title });
+      
       // Mock progress updates
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         if (uploadProgress < 90) {
           uploadProgress += 10;
         }
       }, 500);
       
-      await uploadDocument(selectedFile, title);
+      const response = await uploadDocument(formData);
+      console.log('Yükleme cevabı:', response);
       
       clearInterval(progressInterval);
       uploadProgress = 100;
       
       toast({
-        title: 'Upload successful',
-        description: 'Your document is being processed',
+        title: 'Yükleme başarılı',
+        description: 'Belgeniz işleniyor',
         status: 'success',
         duration: 5000,
         isClosable: true,
@@ -103,16 +113,17 @@
       onSuccess();
       
     } catch (err) {
-      error = err.message || 'Failed to upload document';
+      error = err.message || 'Belge yükleme başarısız oldu';
+      console.error('Yükleme hatası:', err);
       toast({
-        title: 'Upload failed',
+        title: 'Yükleme başarısız',
         description: error,
         status: 'error',
         duration: 5000,
         isClosable: true,
       });
     } finally {
-      clearInterval(progressInterval);
+      if (progressInterval) clearInterval(progressInterval);
       uploading = false;
       uploadProgress = 0;
     }

@@ -1,6 +1,7 @@
 {
 	"/": [],
 	"/documents": [],
+	"/documents/upload": [],
 	"/documents/[id]": [
 		"src/routes/documents/[id]/+page.js"
 	],

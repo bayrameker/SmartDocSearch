@@ -1,17 +1,4 @@
 <script>
-  import { 
-    Box, 
-    Text, 
-    Button, 
-    Input,
-    FormControl,
-    FormLabel,
-    FormHelperText,
-    Progress,
-    Alert,
-    AlertIcon,
-    useToast
-  } from '@chakra-ui/svelte';
   import { onMount } from 'svelte';
   import { user } from '../lib/store';
   import { uploadDocument } from '../lib/api';

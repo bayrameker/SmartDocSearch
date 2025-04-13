@@ -1,0 +1,11 @@
+{
+	"/": [],
+	"/documents": [],
+	"/documents/[id]": [
+		"src/routes/documents/[id]/+page.js"
+	],
+	"/login": [],
+	"/query": [],
+	"/register": [],
+	"/search": []
+}

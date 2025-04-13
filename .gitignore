@@ -1,0 +1,79 @@
+# Node.js bağımlılıkları
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Çalışma zamanı verisi
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Yapım dosyaları
+dist/
+build/
+out/
+.next/
+.nuxt/
+.svelte-kit/
+.vercel/
+.output/
+
+# IDE ve editör dosyaları
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Replit ile ilgili dosyalar
+.replit
+.config/
+.upm/
+.cache/
+.breakpoints
+replit.nix
+.replit.backup
+.replit_history
+.nix_history
+
+# Log dosyaları
+*.log
+logs/
+log/
+
+# Geçici dosyalar
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Test kapsama raporları
+coverage/
+.nyc_output/
+
+# Açık API anahtarları (açık API anahtarları güvenlik riskleri oluşturabilir)
+**/config.json
+**/settings.json
+!example.config.json
+!example.settings.json
+
+# PostgreSQL veritabanı yedekleri
+*.dump
+*.sql
+*.bak
+
+# Diğer
+.history/
+.turbo/
+.docusaurus/
+typings/
+.secrets/

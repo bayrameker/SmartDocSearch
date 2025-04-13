@@ -2,49 +2,110 @@ import { API_GATEWAY_URL } from '../config';
 
 // Auth API endpoints
 export async function loginUser(username: string, password: string) {
-  const response = await fetch(`${API_GATEWAY_URL}/auth/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ username, password }),
-  });
+  try {
+    console.log('API Giriş isteği gönderiliyor:', { username });
+    
+    const loginResponse = await fetch(`${API_GATEWAY_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      credentials: 'include',
+      mode: 'cors',
+      body: JSON.stringify({ username, password }),
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Giriş başarısız oldu');
+    console.log('API yanıt status:', loginResponse.status);
+    
+    if (!loginResponse.ok) {
+      let errorMessage = 'Giriş başarısız oldu';
+      
+      try {
+        const errorData = await loginResponse.json();
+        console.error('API Hata yanıtı:', errorData);
+        errorMessage = errorData.error || 'Giriş işlemi sırasında bir hata oluştu';
+      } catch (jsonError) {
+        console.error('API hata yanıtı alınamadı:', jsonError);
+        errorMessage = `Sunucu hatası: ${loginResponse.status} ${loginResponse.statusText}`;
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    try {
+      const data = await loginResponse.json();
+      console.log('API Başarılı giriş:', data);
+      return data;
+    } catch (jsonError) {
+      console.error('API yanıtı JSON olarak alınamadı:', jsonError);
+      throw new Error('Sunucu yanıtı işlenirken bir hata oluştu');
+    }
+  } catch (error) {
+    console.error('API Giriş hatası:', error);
+    throw error;
   }
-
-  return response.json();
 }
 
 export async function registerUser(username: string, password: string, email: string) {
   try {
-    console.log('API Kayıt isteği:', { username, email });
+    console.log('API Kayıt isteği gönderiliyor:', { username, email });
+    console.log('API URL:', API_GATEWAY_URL);
     
-    const response = await fetch(`${API_GATEWAY_URL}/auth/register`, {
+    // CORS sorunu olmaması için basit bir fetch testi yapalım
+    try {
+      const testResponse = await fetch(`${API_GATEWAY_URL}/health`);
+      console.log('API Sağlık kontrolü:', testResponse.status);
+    } catch (testError) {
+      console.error('API Sağlık kontrolü hatası:', testError);
+      throw new Error('API sunucusuna bağlanılamadı. Ağ bağlantınızı kontrol edin.');
+    }
+    
+    // Asıl kayıt isteği
+    const registerResponse = await fetch(`${API_GATEWAY_URL}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
-      body: JSON.stringify({ username, password, email }),
+      credentials: 'include',
+      mode: 'cors',
+      body: JSON.stringify({ 
+        username, 
+        password, 
+        email 
+      }),
     });
 
-    // Yanıt alındı, durumu kontrol et
-    console.log('API yanıt status:', response.status);
+    console.log('API yanıt status:', registerResponse.status);
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('API Hata:', errorData);
-      throw new Error(errorData.error || 'Kayıt başarısız oldu');
+    // Sunucudan bir hata yanıtı geldi mi?
+    if (!registerResponse.ok) {
+      let errorMessage = 'Kayıt başarısız oldu';
+      
+      try {
+        const errorData = await registerResponse.json();
+        console.error('API Hata yanıtı:', errorData);
+        errorMessage = errorData.error || 'Kayıt işlemi sırasında bir hata oluştu';
+      } catch (jsonError) {
+        console.error('API hata yanıtı alınamadı:', jsonError);
+        errorMessage = `Sunucu hatası: ${registerResponse.status} ${registerResponse.statusText}`;
+      }
+      
+      throw new Error(errorMessage);
     }
 
-    // Başarılı yanıt
-    const data = await response.json();
-    console.log('API Başarılı:', data);
-    return data;
+    // Başarılı yanıt, JSON olarak dönüştür
+    try {
+      const data = await registerResponse.json();
+      console.log('API Başarılı yanıt:', data);
+      return data;
+    } catch (jsonError) {
+      console.error('API yanıtı JSON olarak alınamadı:', jsonError);
+      throw new Error('Sunucu yanıtı işlenirken bir hata oluştu');
+    }
   } catch (error) {
-    console.error('API İstek hatası:', error);
+    console.error('API İstek işleme hatası:', error);
     throw error;
   }
 }

@@ -1,5 +1,5 @@
 // API endpoint configurations
-export const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8000';
+export const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://172.31.128.46:8000';
 
 // Feature flags
 export const FEATURES = {

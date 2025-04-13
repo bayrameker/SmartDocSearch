@@ -15,12 +15,12 @@ const server = fastify({
 
 // CORS configuration
 server.register(cors, {
-  origin: (origin, cb) => {
-    cb(null, true);
-  },
+  origin: '*',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Content-Length', 'Content-Type'],
+  maxAge: 86400,
 });
 
 // In-memory user storage for demonstration

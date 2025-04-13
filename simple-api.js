@@ -15,12 +15,13 @@ const server = fastify({
 
 // CORS configuration
 server.register(cors, {
-  origin: '*',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  exposedHeaders: ['Content-Length', 'Content-Type'],
+  origin: true, // Tüm kaynaklara izin ver ve Reflect-Origin header'ını kullan
+  credentials: false, // credentials: 'omit' ile eşleşmesi için false yapıyoruz
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+  exposedHeaders: ['Content-Length', 'Content-Type', 'Authorization'],
   maxAge: 86400,
+  preflight: true,
 });
 
 // In-memory user storage for demonstration

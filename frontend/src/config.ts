@@ -1,5 +1,9 @@
 // API endpoint configurations
-export const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://172.31.128.46:8000';
+// Dinamik IP adresi ve port kullanımı için window.location'dan alıyoruz
+export const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 
+  (typeof window !== 'undefined' 
+    ? `${window.location.protocol}//${window.location.hostname}:8000` 
+    : 'http://localhost:8000');
 
 // Feature flags
 export const FEATURES = {

@@ -11,7 +11,7 @@ export async function loginUser(username: string, password: string) {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      credentials: 'include',
+      credentials: 'omit', // include yerine omit kullanarak CORS sorunlarını önleyelim
       mode: 'cors',
       body: JSON.stringify({ username, password }),
     });
@@ -56,6 +56,9 @@ export async function registerUser(username: string, password: string, email: st
     try {
       const testResponse = await fetch(`${API_GATEWAY_URL}/health`);
       console.log('API Sağlık kontrolü:', testResponse.status);
+      if (testResponse.ok) {
+        console.log('API Sağlık kontrolü başarılı');
+      }
     } catch (testError) {
       console.error('API Sağlık kontrolü hatası:', testError);
       throw new Error('API sunucusuna bağlanılamadı. Ağ bağlantınızı kontrol edin.');
@@ -68,7 +71,7 @@ export async function registerUser(username: string, password: string, email: st
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      credentials: 'include',
+      credentials: 'omit', // include yerine omit kullanarak CORS sorunlarını önleyelim
       mode: 'cors',
       body: JSON.stringify({ 
         username, 

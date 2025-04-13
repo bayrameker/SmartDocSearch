@@ -1,110 +1,52 @@
-import { fetch } from 'undici';
 import OpenAI from 'openai';
-import { OPENAI_API_KEY, VECTOR_SERVICE_URL } from '../../config';
+import { OPENAI_API_KEY, OPENAI_COMPLETION_MODEL } from '../../config';
+import { QuerySource } from '../../shared/types';
 
 // Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY,
-});
+const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 /**
- * Query using OpenAI with context from user's documents
+ * Generate answer using OpenAI given a query and relevant documents
  * 
- * @param query User query
- * @param userId User ID for filtering
- * @returns Answer and sources
+ * @param query The user query
+ * @param sources The relevant document sources
+ * @returns Generated answer
  */
-export async function queryWithOpenAI(query: string, userId?: number) {
+export async function generateAnswer(query: string, sources: QuerySource[]): Promise<string> {
   try {
-    // Step 1: Retrieve some relevant document chunks for context
-    const collectionName = userId ? `user_${userId}_docs` : 'all_docs';
-    
-    // Generate embedding for the query
-    const embeddingResponse = await openai.embeddings.create({
-      model: "text-embedding-3-small",
-      input: query,
-    });
-    
-    const queryVector = embeddingResponse.data[0].embedding;
-    
-    // Search vector database
-    const vectorResponse = await fetch(`${VECTOR_SERVICE_URL}/search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        collection: collectionName,
-        query,
-        vector: queryVector,
-        limit: 3, // Fewer chunks for general questions
-        filter: userId ? {
-          must: [
-            {
-              key: 'payload.metadata.userId',
-              match: {
-                value: userId.toString(),
-              },
-            },
-          ],
-        } : undefined,
-      }),
-    });
-    
-    // Handle case where vector search fails (e.g., collection doesn't exist)
-    let context = '';
-    let sources = [];
-    
-    if (vectorResponse.ok) {
-      const vectorResults = await vectorResponse.json();
-      if (vectorResults.results && vectorResults.results.length > 0) {
-        const contextChunks = vectorResults.results.map((hit: any) => hit.payload.text);
-        context = contextChunks.join('\n\n');
-        
-        // Prepare sources
-        sources = vectorResults.results.map((hit: any) => ({
-          documentId: hit.payload.documentId,
-          text: hit.payload.text.substring(0, 200) + '...',
-          score: hit.score,
-        }));
-      }
+    if (!OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not set');
     }
     
-    // Step 2: Generate answer using OpenAI with or without context
-    const messages = [
-      {
-        role: "system",
-        content: "You are an expert AI assistant that helps users with their documents and answers questions. Use your knowledge and the context provided (if any) to provide helpful, accurate responses."
-      }
-    ];
+    // Prepare context from sources
+    const context = sources.map(source => {
+      return `Document: ${source.title}
+Content: ${source.content}
+---`;
+    }).join('\n');
     
-    if (context) {
-      messages.push({
-        role: "user",
-        content: `I have some documents with the following information:\n${context}\n\nBased on this context and your knowledge, please answer: ${query}`
-      });
-    } else {
-      messages.push({
-        role: "user",
-        content: query
-      });
-    }
-    
-    const completionResponse = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      messages,
-      temperature: 0.5,
+    // Prepare prompt
+    const systemPrompt = `Sen bir Türkçe dil destekli belge sorgu motorusun. 
+Belgelerdeki bilgiye dayanarak kullanıcının sorularını doğru ve açık bir şekilde yanıtla.
+Yanıtın aşağıdaki belgelerde bulunan bilgilere dayanmalıdır.
+Belge içeriğinde bulunan bilgilere dayanarak yanıt ver. 
+Eğer yanıt belgelerde bulunmuyorsa, "Bu sorunun yanıtı mevcut belgelerde bulunmuyor" diye belirt.
+Yanıtları biçimlendirmek için Markdown kullanabilirsin.`;
+
+    // Call OpenAI
+    const response = await openai.chat.completions.create({
+      model: OPENAI_COMPLETION_MODEL, // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Sorgu: ${query}\n\nKaynaklar:\n${context}` }
+      ],
+      temperature: 0.3,
+      max_tokens: 1000,
     });
     
-    const answer = completionResponse.choices[0].message.content;
-    
-    return {
-      answer,
-      sources,
-    };
-    
+    return response.choices[0].message.content || 'Yanıt üretilirken bir hata oluştu.';
   } catch (error) {
-    console.error('OpenAI query error:', error);
-    throw error;
+    console.error('Error generating answer:', error);
+    return 'Üzgünüm, yanıt üretilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.';
   }
 }

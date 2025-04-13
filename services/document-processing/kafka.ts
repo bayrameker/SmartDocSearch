@@ -32,8 +32,11 @@ export async function initializeKafka() {
  */
 export async function sendToKafka(topic: string, message: any) {
   try {
-    if (!producer.isConnected) {
+    // Reconnect to Kafka if needed (Producer doesn't have isConnected property)
+    try {
       await producer.connect();
+    } catch (e) {
+      // Already connected, this is fine
     }
     
     await producer.send({

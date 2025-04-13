@@ -269,6 +269,66 @@ server.post('/query', async (request, reply) => {
   }
 });
 
+// Mock document endpoints
+server.get('/documents', async (request, reply) => {
+  try {
+    return reply.code(200).send({
+      documents: [],
+      total: 0,
+      page: 1,
+      limit: 10,
+      success: true
+    });
+  } catch (error) {
+    server.log.error('Error getting documents:', error);
+    return reply.code(500).send({
+      success: false,
+      error: 'Belgeler alınırken bir hata oluştu'
+    });
+  }
+});
+
+server.get('/documents/:id', async (request, reply) => {
+  try {
+    const { id } = request.params;
+    return reply.code(200).send({
+      id: parseInt(id),
+      title: 'Örnek Belge',
+      filename: 'ornek.pdf',
+      mimeType: 'application/pdf',
+      createdAt: new Date().toISOString(),
+      status: 'processed',
+      success: true
+    });
+  } catch (error) {
+    server.log.error('Error getting document:', error);
+    return reply.code(500).send({
+      success: false,
+      error: 'Belge alınırken bir hata oluştu'
+    });
+  }
+});
+
+server.post('/documents/upload', async (request, reply) => {
+  try {
+    return reply.code(201).send({
+      id: 1,
+      title: 'Yüklenen Belge',
+      filename: 'yuklenen.pdf',
+      mimeType: 'application/pdf',
+      createdAt: new Date().toISOString(),
+      status: 'processing',
+      success: true
+    });
+  } catch (error) {
+    server.log.error('Error uploading document:', error);
+    return reply.code(500).send({
+      success: false,
+      error: 'Belge yüklenirken bir hata oluştu'
+    });
+  }
+});
+
 // Start the server
 const start = async () => {
   try {

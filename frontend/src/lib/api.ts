@@ -129,13 +129,19 @@ export async function logoutUser() {
   return true;
 }
 
+// Browser environment check helper
+const isBrowser = () => typeof window !== 'undefined';
+
+// Token helper function
+const getToken = () => isBrowser() ? localStorage.getItem('token') : null;
+
 // Document API endpoints
 export async function getDocuments(page = 1, limit = 10) {
-  const token = localStorage.getItem('token');
+  const token = getToken();
   
   const response = await fetch(`${API_GATEWAY_URL}/documents?page=${page}&limit=${limit}`, {
     headers: {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': token ? `Bearer ${token}` : '',
     },
   });
 
@@ -148,11 +154,11 @@ export async function getDocuments(page = 1, limit = 10) {
 }
 
 export async function getDocument(id: number) {
-  const token = localStorage.getItem('token');
+  const token = getToken();
   
   const response = await fetch(`${API_GATEWAY_URL}/documents/${id}`, {
     headers: {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': token ? `Bearer ${token}` : '',
     },
   });
 
@@ -165,12 +171,12 @@ export async function getDocument(id: number) {
 }
 
 export async function uploadDocument(formData: FormData) {
-  const token = localStorage.getItem('token');
+  const token = getToken();
   
   const response = await fetch(`${API_GATEWAY_URL}/documents/upload`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': token ? `Bearer ${token}` : '',
     },
     body: formData,
   });
@@ -184,12 +190,12 @@ export async function uploadDocument(formData: FormData) {
 }
 
 export async function deleteDocument(id: number) {
-  const token = localStorage.getItem('token');
+  const token = getToken();
   
   const response = await fetch(`${API_GATEWAY_URL}/documents/${id}`, {
     method: 'DELETE',
     headers: {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': token ? `Bearer ${token}` : '',
     },
   });
 
@@ -202,17 +208,17 @@ export async function deleteDocument(id: number) {
 }
 
 export function getDocumentDownloadUrl(id: number) {
-  const token = localStorage.getItem('token');
-  return `${API_GATEWAY_URL}/documents/${id}/download?token=${token}`;
+  const token = getToken();
+  return `${API_GATEWAY_URL}/documents/${id}/download?token=${token || ''}`;
 }
 
 // Search API endpoints
 export async function searchDocuments(query: string, page = 1, limit = 10) {
-  const token = localStorage.getItem('token');
+  const token = getToken();
   
   const response = await fetch(`${API_GATEWAY_URL}/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`, {
     headers: {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': token ? `Bearer ${token}` : '',
     },
   });
 
@@ -226,13 +232,13 @@ export async function searchDocuments(query: string, page = 1, limit = 10) {
 
 // Query API endpoints
 export async function queryDocuments(query: string) {
-  const token = localStorage.getItem('token');
+  const token = getToken();
   
   const response = await fetch(`${API_GATEWAY_URL}/query`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
+      'Authorization': token ? `Bearer ${token}` : '',
     },
     body: JSON.stringify({ query }),
   });
@@ -246,11 +252,11 @@ export async function queryDocuments(query: string) {
 }
 
 export async function getQueryHistory() {
-  const token = localStorage.getItem('token');
+  const token = getToken();
   
   const response = await fetch(`${API_GATEWAY_URL}/query/history`, {
     headers: {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': token ? `Bearer ${token}` : '',
     },
   });
 

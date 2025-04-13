@@ -1,0 +1,28 @@
+document-search-frontend@0.1.0 dev
+
+  VITE v6.2.6  ready in 739 ms
+
+  ➜  Local:   http://localhost:5000/
+  ➜  Network: http://172.31.128.46:5000/
+  ➜  press h + enter to show help
+7:57:49 PM [vite-plugin-svelte] src/routes/documents/+page.svelte:86:8 Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label
+7:57:49 PM [vite-plugin-svelte] src/routes/documents/+page.svelte:92:8 Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label
+7:57:49 PM [vite-plugin-svelte] src/routes/documents/+page.svelte:142:12 Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label
+7:57:49 PM [vite-plugin-svelte] src/routes/documents/+page.svelte:149:12 Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label
+7:57:49 PM [vite-plugin-svelte] src/routes/documents/+page.svelte:163:8 Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label
+7:57:49 PM [vite-plugin-svelte] src/routes/documents/+page.svelte:179:8 Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label
+7:57:58 PM [vite-plugin-svelte] src/routes/documents/[id]/+page.svelte:211:8 Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label
+Error loading document: ReferenceError: localStorage is not defined
+    at getDocument (/home/runner/workspace/frontend/src/lib/api.ts:130:17)
+    at load (/home/runner/workspace/frontend/src/routes/documents/[id]/+page.js:8:65)
+    at load_data (/home/runner/workspace/node_modules/@sveltejs/kit/src/runtime/server/page/load_data.js:163:44)
+    at async eval (/home/runner/workspace/node_modules/@sveltejs/kit/src/runtime/server/page/index.js:183:13)
+7:59:03 PM [vite-plugin-svelte] src/routes/documents/[id]/+page.svelte:211:8 Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label

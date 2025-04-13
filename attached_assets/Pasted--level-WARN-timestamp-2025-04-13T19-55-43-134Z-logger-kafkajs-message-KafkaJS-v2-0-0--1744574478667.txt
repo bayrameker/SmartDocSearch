@@ -1,0 +1,62 @@
+{"level":"WARN","timestamp":"2025-04-13T19:55:43.134Z","logger":"kafkajs","message":"KafkaJS v2.0.0 switched default partitioner. To retain the same partitioning behavior as in previous versions, create the producer with the option \"createPartitioner: Partitioners.LegacyPartitioner\". See the migration guide at https://kafka.js.org/docs/migration-guide-v2.0.0#producer-new-default-partitioner for details. Silence this warning by setting the environment variable \"KAFKAJS_NO_PARTITIONER_WARNING=1\""}
+{"level":30,"time":1744574143156,"pid":12276,"hostname":"29c00f3e62b5","msg":"Server listening at http://127.0.0.1:8001"}
+Document Processing Service running on http://localhost:8001
+{"level":30,"time":1744574143156,"pid":12276,"hostname":"29c00f3e62b5","msg":"Server listening at http://172.31.128.46:8001"}
+{"level":"ERROR","timestamp":"2025-04-13T19:55:43.158Z","logger":"kafkajs","message":"[Connection] Connection error: connect ECONNREFUSED 127.0.0.1:9092","broker":"localhost:9092","clientId":"document-processing-service","stack":"Error: connect ECONNREFUSED 127.0.0.1:9092\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)"}
+{"level":"ERROR","timestamp":"2025-04-13T19:55:43.159Z","logger":"kafkajs","message":"[BrokerPool] Failed to connect to seed broker, trying another broker from the list: Connection error: connect ECONNREFUSED 127.0.0.1:9092","retryCount":0,"retryTime":262}
+{"level":"ERROR","timestamp":"2025-04-13T19:55:43.423Z","logger":"kafkajs","message":"[Connection] Connection error: connect ECONNREFUSED 127.0.0.1:9092","broker":"localhost:9092","clientId":"document-processing-service","stack":"Error: connect ECONNREFUSED 127.0.0.1:9092\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)"}
+{"level":"ERROR","timestamp":"2025-04-13T19:55:43.423Z","logger":"kafkajs","message":"[BrokerPool] Failed to connect to seed broker, trying another broker from the list: Connection error: connect ECONNREFUSED 127.0.0.1:9092","retryCount":1,"retryTime":478}
+{"level":"ERROR","timestamp":"2025-04-13T19:55:43.902Z","logger":"kafkajs","message":"[Connection] Connection error: connect ECONNREFUSED 127.0.0.1:9092","broker":"localhost:9092","clientId":"document-processing-service","stack":"Error: connect ECONNREFUSED 127.0.0.1:9092\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)"}
+{"level":"ERROR","timestamp":"2025-04-13T19:55:43.903Z","logger":"kafkajs","message":"[BrokerPool] Failed to connect to seed broker, trying another broker from the list: Connection error: connect ECONNREFUSED 127.0.0.1:9092","retryCount":2,"retryTime":906}
+{"level":"ERROR","timestamp":"2025-04-13T19:55:44.810Z","logger":"kafkajs","message":"[Connection] Connection error: connect ECONNREFUSED 127.0.0.1:9092","broker":"localhost:9092","clientId":"document-processing-service","stack":"Error: connect ECONNREFUSED 127.0.0.1:9092\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)"}
+{"level":"ERROR","timestamp":"2025-04-13T19:55:44.811Z","logger":"kafkajs","message":"[BrokerPool] Failed to connect to seed broker, trying another broker from the list: Connection error: connect ECONNREFUSED 127.0.0.1:9092","retryCount":3,"retryTime":1986}
+{"level":"ERROR","timestamp":"2025-04-13T19:55:46.798Z","logger":"kafkajs","message":"[Connection] Connection error: connect ECONNREFUSED 127.0.0.1:9092","broker":"localhost:9092","clientId":"document-processing-service","stack":"Error: connect ECONNREFUSED 127.0.0.1:9092\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)"}
+{"level":"ERROR","timestamp":"2025-04-13T19:55:46.799Z","logger":"kafkajs","message":"[BrokerPool] Failed to connect to seed broker, trying another broker from the list: Connection error: connect ECONNREFUSED 127.0.0.1:9092","retryCount":4,"retryTime":3846}
+{"level":"ERROR","timestamp":"2025-04-13T19:55:50.648Z","logger":"kafkajs","message":"[Connection] Connection error: connect ECONNREFUSED 127.0.0.1:9092","broker":"localhost:9092","clientId":"document-processing-service","stack":"Error: connect ECONNREFUSED 127.0.0.1:9092\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)"}
+{"level":"ERROR","timestamp":"2025-04-13T19:55:50.649Z","logger":"kafkajs","message":"[BrokerPool] Failed to connect to seed broker, trying another broker from the list: Connection error: connect ECONNREFUSED 127.0.0.1:9092","retryCount":5,"retryTime":6258}
+Error initializing Kafka: KafkaJSNonRetriableError
+  Caused by: KafkaJSConnectionError: Connection error: connect ECONNREFUSED 127.0.0.1:9092
+    at Socket.onError (/home/runner/workspace/node_modules/kafkajs/src/network/connection.js:210:23)
+    ... 3 lines matching cause stack trace ...
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  name: 'KafkaJSNumberOfRetriesExceeded',
+  retriable: false,
+  helpUrl: undefined,
+  retryCount: 5,
+  retryTime: 6258,
+  [cause]: KafkaJSConnectionError: Connection error: connect ECONNREFUSED 127.0.0.1:9092
+      at Socket.onError (/home/runner/workspace/node_modules/kafkajs/src/network/connection.js:210:23)
+      at Socket.emit (node:events:518:28)
+      at emitErrorNT (node:internal/streams/destroy:169:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+    retriable: true,
+    helpUrl: undefined,
+    broker: 'localhost:9092',
+    code: 'ECONNREFUSED',
+    [cause]: undefined
+  }
+}
+Failed to initialize Kafka: KafkaJSNonRetriableError
+  Caused by: KafkaJSConnectionError: Connection error: connect ECONNREFUSED 127.0.0.1:9092
+    at Socket.onError (/home/runner/workspace/node_modules/kafkajs/src/network/connection.js:210:23)
+    ... 3 lines matching cause stack trace ...
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  name: 'KafkaJSNumberOfRetriesExceeded',
+  retriable: false,
+  helpUrl: undefined,
+  retryCount: 5,
+  retryTime: 6258,
+  [cause]: KafkaJSConnectionError: Connection error: connect ECONNREFUSED 127.0.0.1:9092
+      at Socket.onError (/home/runner/workspace/node_modules/kafkajs/src/network/connection.js:210:23)
+      at Socket.emit (node:events:518:28)
+      at emitErrorNT (node:internal/streams/destroy:169:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+    retriable: true,
+    helpUrl: undefined,
+    broker: 'localhost:9092',
+    code: 'ECONNREFUSED',
+    [cause]: undefined
+  }
+}

@@ -29,7 +29,12 @@ export default defineConfig({
     },
     cors: true,
     proxy: {},
-    allowedHosts: 'all',
+    allowedHosts: [
+      'localhost',
+      '*.replit.dev',
+      '*.repl.co',
+      '627fd322-c460-4889-b148-fc58fe628c69-00-3ui7y5efzujue.spock.replit.dev'
+    ],
     fs: {
       strict: false,
       allow: [

@@ -1,0 +1,10 @@
+{
+  "schema": "./shared/schema.ts",
+  "out": "./drizzle",
+  "driver": "pg",
+  "dbCredentials": {
+    "connectionString": "env(DATABASE_URL)"
+  },
+  "verbose": true,
+  "strict": true
+}

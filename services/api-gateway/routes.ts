@@ -1,6 +1,6 @@
-import { Elysia } from 'elysia';
-import { createProxy } from '@elysiajs/fn';
-import { registerAuthRoutes } from './auth';
+import { FastifyInstance } from 'fastify';
+import fetch from 'node-fetch';
+import { verifyToken } from './auth';
 import {
   DOCUMENT_PROCESSING_URL,
   SEARCH_SERVICE_URL,
@@ -9,322 +9,141 @@ import {
   QUERY_ENGINE_URL
 } from '../../config';
 
-// Create proxy handlers for each service
-const documentProcessingProxy = createProxy(DOCUMENT_PROCESSING_URL);
-const searchProxy = createProxy(SEARCH_SERVICE_URL);
-const storageProxy = createProxy(STORAGE_SERVICE_URL);
-const vectorProxy = createProxy(VECTOR_SERVICE_URL);
-const queryEngineProxy = createProxy(QUERY_ENGINE_URL);
-
 /**
  * Configure all API routes
  * 
- * @param app Elysia app instance
+ * @param app Fastify app instance
  */
-export function configureRoutes(app: Elysia) {
-  // Register authentication routes
-  registerAuthRoutes(app);
-  
-  // Document processing routes
-  app.group('/documents', app => {
-    // Upload and process a document
-    app.post('/process', async ({ body, user, request, set }) => {
-      try {
-        // Add user ID to request
-        if (user) {
-          body.userId = user.id;
-        }
-        
-        // Forward request to document processing service
-        const response = await documentProcessingProxy('/process', {
-          method: 'POST',
-          body,
-          headers: request.headers,
-        });
-        
-        const data = await response.json();
-        set.status = response.status;
-        return data;
-        
-      } catch (error) {
-        console.error('Document processing proxy error:', error);
-        set.status = 500;
-        return {
+export function configureRoutes(app: FastifyInstance) {
+  // Document upload endpoint
+  app.post('/documents/upload', async (request, reply) => {
+    try {
+      // Validate auth token
+      const authHeader = request.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return reply.code(401).send({
           success: false,
-          error: error.message || 'Document processing failed',
-        };
+          error: 'Unauthorized'
+        });
       }
-    });
+      
+      const token = authHeader.substring(7);
+      let userId;
+      
+      try {
+        const decoded = verifyToken(token);
+        userId = decoded.sub;
+      } catch (err) {
+        return reply.code(401).send({
+          success: false,
+          error: 'Invalid token'
+        });
+      }
+      
+      // Forward to storage service
+      const response = await fetch(`${STORAGE_SERVICE_URL}/upload`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...request.body,
+          userId
+        }),
+      });
+      
+      const data = await response.json();
+      return reply.code(response.status).send(data);
+    } catch (error) {
+      app.log.error('Error uploading document:', error);
+      return reply.code(500).send({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
   });
   
-  // Storage routes
-  app.group('/storage', app => {
-    // Upload a document
-    app.post('/documents', async ({ request, user, set }) => {
-      try {
-        // Forward request to storage service
-        const response = await storageProxy('/documents', {
-          method: 'POST',
-          body: request.body,
-          headers: request.headers,
-        });
-        
-        const data = await response.json();
-        set.status = response.status;
-        return data;
-        
-      } catch (error) {
-        console.error('Storage proxy error:', error);
-        set.status = 500;
-        return {
-          success: false,
-          error: error.message || 'Document upload failed',
-        };
-      }
-    });
-    
-    // Get document
-    app.get('/documents/:id', async ({ params, request, set }) => {
-      try {
-        const response = await storageProxy(`/documents/${params.id}`, {
-          headers: request.headers,
-        });
-        
-        const data = await response.json();
-        set.status = response.status;
-        return data;
-        
-      } catch (error) {
-        console.error('Storage proxy error:', error);
-        set.status = 500;
-        return {
-          success: false,
-          error: error.message || 'Failed to get document',
-        };
-      }
-    });
-    
-    // Download document
-    app.get('/documents/:id/download', async ({ params, request, set }) => {
-      try {
-        const response = await storageProxy(`/documents/${params.id}/download`, {
-          headers: request.headers,
-        });
-        
-        // Set appropriate headers from the storage service response
-        const headers = response.headers;
-        if (headers.get('Content-Type')) {
-          set.headers['Content-Type'] = headers.get('Content-Type')!;
-        }
-        
-        if (headers.get('Content-Disposition')) {
-          set.headers['Content-Disposition'] = headers.get('Content-Disposition')!;
-        }
-        
-        set.status = response.status;
-        
-        // Return the file stream
-        return await response.blob();
-        
-      } catch (error) {
-        console.error('Storage proxy error:', error);
-        set.status = 500;
-        return {
-          success: false,
-          error: error.message || 'Document download failed',
-        };
-      }
-    });
-    
-    // List documents
-    app.get('/documents', async ({ query, user, request, set }) => {
-      try {
-        // Add user ID to query if not present
-        let url = '/documents';
-        if (user && !query.userId) {
-          url += `?userId=${user.id}`;
-          if (query.page) url += `&page=${query.page}`;
-          if (query.limit) url += `&limit=${query.limit}`;
-        } else {
-          if (query.userId) url += `?userId=${query.userId}`;
-          if (query.page) url += `${url.includes('?') ? '&' : '?'}page=${query.page}`;
-          if (query.limit) url += `${url.includes('?') ? '&' : '?'}limit=${query.limit}`;
-        }
-        
-        const response = await storageProxy(url, {
-          headers: request.headers,
-        });
-        
-        const data = await response.json();
-        set.status = response.status;
-        return data;
-        
-      } catch (error) {
-        console.error('Storage proxy error:', error);
-        set.status = 500;
-        return {
-          success: false,
-          error: error.message || 'Failed to list documents',
-        };
-      }
-    });
-    
-    // Delete document
-    app.delete('/documents/:id', async ({ params, request, set }) => {
-      try {
-        const response = await storageProxy(`/documents/${params.id}`, {
-          method: 'DELETE',
-          headers: request.headers,
-        });
-        
-        const data = await response.json();
-        set.status = response.status;
-        return data;
-        
-      } catch (error) {
-        console.error('Storage proxy error:', error);
-        set.status = 500;
-        return {
-          success: false,
-          error: error.message || 'Failed to delete document',
-        };
-      }
-    });
+  // Document status endpoint
+  app.get('/documents/:id/status', async (request, reply) => {
+    try {
+      const { id } = request.params as any;
+      
+      // Forward to document processing service
+      const response = await fetch(`${DOCUMENT_PROCESSING_URL}/status/${id}`);
+      
+      const data = await response.json();
+      return reply.code(response.status).send(data);
+    } catch (error) {
+      app.log.error('Error checking document status:', error);
+      return reply.code(500).send({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
   });
   
-  // Search routes
-  app.group('/search', app => {
-    // Search documents
-    app.get('/', async ({ query, user, request, set }) => {
-      try {
-        let url = '/search?q=' + encodeURIComponent(query.q as string);
-        
-        // Add user ID if available
-        if (user && !query.userId) {
-          url += `&userId=${user.id}`;
-        } else if (query.userId) {
-          url += `&userId=${query.userId}`;
-        }
-        
-        const response = await searchProxy(url, {
-          headers: request.headers,
-        });
-        
-        const data = await response.json();
-        set.status = response.status;
-        return data;
-        
-      } catch (error) {
-        console.error('Search proxy error:', error);
-        set.status = 500;
-        return {
-          success: false,
-          error: error.message || 'Search failed',
-        };
-      }
-    });
+  // Document download endpoint
+  app.get('/documents/:key/download', async (request, reply) => {
+    try {
+      const { key } = request.params as any;
+      
+      // Forward to storage service
+      const response = await fetch(`${STORAGE_SERVICE_URL}/download/${key}`);
+      
+      const data = await response.json();
+      return reply.code(response.status).send(data);
+    } catch (error) {
+      app.log.error('Error downloading document:', error);
+      return reply.code(500).send({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
   });
   
-  // Vector search routes
-  app.group('/vector', app => {
-    // Semantic search
-    app.post('/search', async ({ body, user, request, set }) => {
-      try {
-        // Add user ID to filter if not present
-        if (user && body && !body.filter) {
-          body.filter = {
-            must: [
-              {
-                key: 'payload.metadata.userId',
-                match: {
-                  value: user.id.toString(),
-                },
-              },
-            ],
-          };
-        }
-        
-        const response = await vectorProxy('/search', {
-          method: 'POST',
-          body,
-          headers: request.headers,
-        });
-        
-        const data = await response.json();
-        set.status = response.status;
-        return data;
-        
-      } catch (error) {
-        console.error('Vector search proxy error:', error);
-        set.status = 500;
-        return {
-          success: false,
-          error: error.message || 'Vector search failed',
-        };
-      }
-    });
+  // Search endpoint
+  app.post('/search', async (request, reply) => {
+    try {
+      // Forward to search service
+      const response = await fetch(`${SEARCH_SERVICE_URL}/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request.body),
+      });
+      
+      const data = await response.json();
+      return reply.code(response.status).send(data);
+    } catch (error) {
+      app.log.error('Error searching documents:', error);
+      return reply.code(500).send({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
   });
   
-  // Query engine routes
-  app.group('/query', app => {
-    // Query documents
-    app.post('/', async ({ body, user, request, set }) => {
-      try {
-        // Add user ID if available
-        if (user && body) {
-          body.userId = user.id;
-        }
-        
-        const response = await queryEngineProxy('/query', {
-          method: 'POST',
-          body,
-          headers: request.headers,
-        });
-        
-        const data = await response.json();
-        set.status = response.status;
-        return data;
-        
-      } catch (error) {
-        console.error('Query engine proxy error:', error);
-        set.status = 500;
-        return {
-          success: false,
-          error: error.message || 'Query failed',
-        };
-      }
-    });
-    
-    // Get query history
-    app.get('/history', async ({ user, query, request, set }) => {
-      try {
-        let url = '/query/history';
-        
-        // Add user ID if available
-        if (user) {
-          url += `?userId=${user.id}`;
-          if (query.limit) url += `&limit=${query.limit}`;
-        } else if (query.userId) {
-          url += `?userId=${query.userId}`;
-          if (query.limit) url += `&limit=${query.limit}`;
-        }
-        
-        const response = await queryEngineProxy(url, {
-          headers: request.headers,
-        });
-        
-        const data = await response.json();
-        set.status = response.status;
-        return data;
-        
-      } catch (error) {
-        console.error('Query history proxy error:', error);
-        set.status = 500;
-        return {
-          success: false,
-          error: error.message || 'Failed to get query history',
-        };
-      }
-    });
+  // Query endpoint
+  app.post('/query', async (request, reply) => {
+    try {
+      // Forward to query engine service
+      const response = await fetch(`${QUERY_ENGINE_URL}/query`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request.body),
+      });
+      
+      const data = await response.json();
+      return reply.code(response.status).send(data);
+    } catch (error) {
+      app.log.error('Error querying documents:', error);
+      return reply.code(500).send({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
   });
 }

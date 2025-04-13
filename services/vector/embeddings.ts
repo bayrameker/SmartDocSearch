@@ -8,10 +8,11 @@ const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 /**
  * Generate embeddings for a list of document chunks
  * 
+ * @param documentId The document ID
  * @param chunks List of document chunks with content
  * @returns List of chunks with vector IDs
  */
-export async function generateEmbeddings(documentId: number, chunks: { chunkId: number; content: string }[]) {
+export async function generateEmbeddings(documentId: number, chunks: { chunkId: number; content: string }[]): Promise<{ chunkId: number; vectorId: string }[]> {
   try {
     if (!OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY is not set');
@@ -21,7 +22,7 @@ export async function generateEmbeddings(documentId: number, chunks: { chunkId: 
     
     // Process chunks in batches of 10 to avoid rate limiting
     const batchSize = 10;
-    const results = [];
+    const results: { chunkId: number; vectorId: string }[] = [];
     
     for (let i = 0; i < chunks.length; i += batchSize) {
       const batch = chunks.slice(i, i + batchSize);

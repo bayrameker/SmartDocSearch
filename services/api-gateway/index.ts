@@ -1,77 +1,55 @@
-import { Elysia } from 'elysia';
-import { cors } from '@elysiajs/cors';
-import { swagger } from '@elysiajs/swagger';
+import fastify from 'fastify';
+import cors from '@fastify/cors';
+import { API_GATEWAY_URL, FRONTEND_PORT } from '../../config';
 import { configureRoutes } from './routes';
-import { verifyToken } from './auth';
-import { HOST, SERVER_PORT } from '../../config';
+import { registerAuthRoutes } from './auth';
 
-// Create an instance of the Elysia server
-const app = new Elysia()
-  .use(cors())
-  .use(swagger({
-    path: '/docs',
-    documentation: {
-      info: {
-        title: 'Document Search and Query API',
-        version: '1.0.0',
-      },
-    },
-  }))
-  .onError(({ error, set }) => {
-    console.error('API Gateway error:', error);
-    set.status = error.status || 500;
-    return {
-      success: false,
-      error: error.message || 'An unexpected error occurred',
-    };
-  });
-
-// Middleware to check authentication for protected routes
-app.derive(({ request, path }) => {
-  // Skip authentication for public paths
-  const publicPaths = [
-    '/health',
-    '/docs',
-    '/auth/login',
-    '/auth/register',
-  ];
-  
-  if (publicPaths.some(p => path.startsWith(p))) {
-    return {};
-  }
-  
-  // Verify token for protected routes
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new Error('Unauthorized: Missing or invalid token');
-  }
-  
-  const token = authHeader.split(' ')[1];
-  try {
-    const user = verifyToken(token);
-    return { user };
-  } catch (error) {
-    throw new Error('Unauthorized: Invalid token');
-  }
+const server = fastify({
+  logger: true
 });
+
+// CORS yapılandırması
+server.register(cors, {
+  origin: (origin, cb) => {
+    // Geliştirme ortamında tüm originlere izin ver
+    cb(null, true);
+    
+    // Üretim ortamında daha kısıtlayıcı olabilir
+    // const allowedOrigins = [`http://localhost:${FRONTEND_PORT}`, 'https://yourproductiondomain.com'];
+    // const allowed = !origin || allowedOrigins.includes(origin);
+    // cb(allowed ? null : new Error('Not allowed by CORS'), allowed);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+});
+
+// Extract the port from the URL
+const url = new URL(API_GATEWAY_URL);
+const port = parseInt(url.port, 10) || 8000;
 
 // Health check endpoint
-app.get('/health', () => {
-  return {
-    status: 'ok',
-    service: 'api-gateway',
-    timestamp: new Date().toISOString(),
-  };
+server.get('/health', async (request, reply) => {
+  return { status: 'ok', service: 'api-gateway' };
 });
 
-// Configure all routes
-configureRoutes(app);
+// Authentication routes
+registerAuthRoutes(server);
+
+// API routes
+configureRoutes(server);
 
 // Start the server
-if (import.meta.main) {
-  app.listen(SERVER_PORT, HOST, () => {
-    console.log(`🚀 API Gateway running at http://${HOST}:${SERVER_PORT}`);
-  });
-}
+const start = async () => {
+  try {
+    await server.listen({ port, host: '0.0.0.0' });
+    console.log(`API Gateway running on ${API_GATEWAY_URL}`);
+  } catch (err) {
+    server.log.error(err);
+    process.exit(1);
+  }
+};
 
-export default app;
+start();
+
+export default server;

@@ -1,11 +1,12 @@
-import { FastifyInstance } from 'fastify';
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
-import { JWT_SECRET, JWT_EXPIRES_IN } from '../../config';
-import { db } from '../../server/db';
-import { users } from '../../shared/schema';
-import { eq } from 'drizzle-orm';
-import { AuthResponse, LoginRequest, RegisterRequest, JwtPayload } from '../../shared/types';
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const config = require('../../config');
+const { db } = require('../../server/db');
+const { users } = require('../../shared/schema');
+const { eq } = require('drizzle-orm');
+
+// Destructure config variables
+const { JWT_SECRET, JWT_EXPIRES_IN } = config;
 
 /**
  * Register authentication routes

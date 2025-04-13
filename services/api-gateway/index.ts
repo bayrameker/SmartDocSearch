@@ -1,8 +1,11 @@
-import fastify from 'fastify';
-import cors from '@fastify/cors';
-import { API_GATEWAY_URL, FRONTEND_PORT } from '../../config';
-import { configureRoutes } from './routes';
-import { registerAuthRoutes } from './auth';
+const fastify = require('fastify');
+const cors = require('@fastify/cors');
+const config = require('../../config');
+const routes = require('./routes');
+const auth = require('./auth');
+
+// Destructure config variables
+const { API_GATEWAY_URL, FRONTEND_PORT } = config;
 
 const server = fastify({
   logger: true
@@ -34,10 +37,10 @@ server.get('/health', async (request, reply) => {
 });
 
 // Authentication routes
-registerAuthRoutes(server);
+auth.registerAuthRoutes(server);
 
 // API routes
-configureRoutes(server);
+routes.configureRoutes(server);
 
 // Start the server
 const start = async () => {

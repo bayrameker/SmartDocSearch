@@ -15,6 +15,10 @@ author = "agent"
 task = "workflow.run"
 args = "Frontend Server"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "API Gateway"
+
 [[workflows.workflow]]
 name = "Frontend Server"
 author = "agent"
@@ -30,9 +34,28 @@ task = "shell.exec"
 args = "cd frontend && npm run dev"
 waitForPort = 5000
 
+[[workflows.workflow]]
+name = "API Gateway"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "packager.installForAll"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node simple-api.js"
+waitForPort = 8000
+
 [deployment]
 run = ["sh", "-c", "cd frontend && npm run dev"]
 
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 8000
+externalPort = 8000

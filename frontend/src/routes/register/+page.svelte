@@ -37,10 +37,22 @@
       isLoading = true;
       error = '';
       
-      const userData = await registerUser(username, password, email);
-      $user = userData;
+      console.log('Kayıt formunda gönderilen:', { username, email });
       
-      goto('/documents');
+      const userData = await registerUser(username, password, email);
+      console.log('Kayıt başarılı, dönen veri:', userData);
+      
+      if (userData && userData.token) {
+        // Token'ı localStorage'e kaydet
+        localStorage.setItem('token', userData.token);
+        
+        // Kullanıcı datasını store'a kaydet
+        $user = userData.user;
+        
+        goto('/documents');
+      } else {
+        error = 'Sunucudan geçersiz yanıt alındı.';
+      }
     } catch (err) {
       console.error('Kayıt hatası:', err);
       error = err.message || 'Kayıt yapılamadı. Lütfen tekrar deneyin.';

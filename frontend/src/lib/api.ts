@@ -19,20 +19,34 @@ export async function loginUser(username: string, password: string) {
 }
 
 export async function registerUser(username: string, password: string, email: string) {
-  const response = await fetch(`${API_GATEWAY_URL}/auth/register`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ username, password, email }),
-  });
+  try {
+    console.log('API Kayıt isteği:', { username, email });
+    
+    const response = await fetch(`${API_GATEWAY_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password, email }),
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Kayıt başarısız oldu');
+    // Yanıt alındı, durumu kontrol et
+    console.log('API yanıt status:', response.status);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('API Hata:', errorData);
+      throw new Error(errorData.error || 'Kayıt başarısız oldu');
+    }
+
+    // Başarılı yanıt
+    const data = await response.json();
+    console.log('API Başarılı:', data);
+    return data;
+  } catch (error) {
+    console.error('API İstek hatası:', error);
+    throw error;
   }
-
-  return response.json();
 }
 
 export async function logoutUser() {

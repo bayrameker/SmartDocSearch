@@ -5,6 +5,9 @@ import { STORAGE_SERVICE_URL } from '../../config';
 import { sendToDocumentProcessing, checkProcessingStatus } from './document-processing';
 import { initializeMinIO, uploadFile, getPresignedUrl, deleteFile, listFiles } from './minio';
 import { createDocument, getDocumentById, getDocumentsByUserId, updateDocumentStatus, deleteDocumentById } from './db';
+import { eq } from 'drizzle-orm';
+import { db } from '../../server/db';
+import { documents } from '../../shared/schema';
 
 const server = fastify({
   logger: true
@@ -196,6 +199,58 @@ server.get('/download/:id', async (request, reply) => {
     });
   } catch (error) {
     server.log.error('Error generating download URL', error);
+    return reply.code(500).send({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+server.post('/document/:id/update', async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const documentId = parseInt(id, 10);
+    
+    if (isNaN(documentId)) {
+      return reply.code(400).send({
+        success: false,
+        error: 'Invalid document ID'
+      });
+    }
+    
+    const document = await getDocumentById(documentId);
+    
+    if (!document) {
+      return reply.code(404).send({
+        success: false,
+        error: 'Document not found'
+      });
+    }
+    
+    // Get update data from request body
+    const { textContent, metadata, status } = request.body as any;
+    
+    // Update document properties
+    const updatedDocument = await db.update(documents)
+      .set({
+        ...(textContent && { textContent }),
+        ...(status && { status }),
+        updatedAt: new Date()
+      })
+      .where(eq(documents.id, documentId))
+      .returning();
+    
+    // Update metadata separately if provided
+    if (metadata) {
+      await updateDocumentMetadata(documentId, metadata);
+    }
+    
+    return reply.code(200).send({
+      success: true,
+      document: updatedDocument[0]
+    });
+  } catch (error) {
+    server.log.error('Error updating document', error);
     return reply.code(500).send({
       success: false,
       error: 'Internal server error'

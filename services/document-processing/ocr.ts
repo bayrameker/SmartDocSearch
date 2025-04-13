@@ -1,8 +1,8 @@
-import { spawn } from 'child_process';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import { OCR_LANGUAGE } from '../../config';
+const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const { OCR_LANGUAGE } = require('../../config');
 
 /**
  * Process a PDF file with OCR
@@ -10,7 +10,7 @@ import { OCR_LANGUAGE } from '../../config';
  * @param filePath Path to the input PDF file
  * @returns Path to the OCR processed PDF file
  */
-export async function processPdfWithOcr(filePath: string): Promise<string> {
+async function processPdfWithOcr(filePath) {
   try {
     // Create a temporary output file
     const tempDir = os.tmpdir();
@@ -63,7 +63,7 @@ export async function processPdfWithOcr(filePath: string): Promise<string> {
  * @param filePath Path to the PDF file
  * @returns Extracted text content
  */
-export async function extractTextFromPdf(filePath: string): Promise<string> {
+async function extractTextFromPdf(filePath) {
   try {
     // Create pdftotext command
     return new Promise((resolve, reject) => {
@@ -109,7 +109,7 @@ export async function extractTextFromPdf(filePath: string): Promise<string> {
  * @param filePath Path to the PDF file
  * @returns Extracted text content
  */
-export async function processAndExtractText(filePath: string): Promise<string> {
+async function processAndExtractText(filePath) {
   try {
     // Process the PDF with OCR
     const ocrFilePath = await processPdfWithOcr(filePath);
@@ -134,7 +134,7 @@ export async function processAndExtractText(filePath: string): Promise<string> {
  * @param mimeType MIME type of the document
  * @returns Extracted text content
  */
-export async function extractTextFromDocument(filePath: string, mimeType: string): Promise<string> {
+async function extractTextFromDocument(filePath, mimeType) {
   try {
     // Handle different file types
     if (mimeType === 'application/pdf') {
@@ -154,3 +154,10 @@ export async function extractTextFromDocument(filePath: string, mimeType: string
     throw error;
   }
 }
+
+module.exports = {
+  processPdfWithOcr,
+  extractTextFromPdf,
+  processAndExtractText,
+  extractTextFromDocument
+};

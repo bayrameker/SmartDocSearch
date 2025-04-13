@@ -1,5 +1,5 @@
-import { Kafka, Consumer, Producer } from 'kafkajs';
-import { KAFKA_BROKERS } from '../../config';
+const { Kafka } = require('kafkajs');
+const { KAFKA_BROKERS } = require('../../config');
 
 // Kafka client
 const kafka = new Kafka({
@@ -8,13 +8,13 @@ const kafka = new Kafka({
 });
 
 // Kafka producer
-let producer: Producer;
+let producer;
 
 // Kafka consumer
-let consumer: Consumer;
+let consumer;
 
 // Initialize Kafka
-export async function initializeKafka() {
+async function initializeKafka() {
   try {
     // Create producer
     producer = kafka.producer();
@@ -44,7 +44,7 @@ export async function initializeKafka() {
  * @param message Message to send
  * @returns Send result
  */
-export async function sendToKafka(topic: string, message: any) {
+async function sendToKafka(topic, message) {
   try {
     if (!producer) {
       throw new Error('Kafka producer not initialized');
@@ -73,7 +73,7 @@ export async function sendToKafka(topic: string, message: any) {
  * 
  * @param messageHandler Function to handle incoming messages
  */
-export async function startConsumer(messageHandler: (message: any) => Promise<void>) {
+async function startConsumer(messageHandler) {
   try {
     if (!consumer) {
       throw new Error('Kafka consumer not initialized');
@@ -107,7 +107,7 @@ export async function startConsumer(messageHandler: (message: any) => Promise<vo
 /**
  * Disconnect from Kafka
  */
-export async function disconnectKafka() {
+async function disconnectKafka() {
   try {
     if (producer) {
       await producer.disconnect();
@@ -136,3 +136,10 @@ process.on('SIGINT', async () => {
   await disconnectKafka();
   process.exit(0);
 });
+
+module.exports = {
+  initializeKafka,
+  sendToKafka,
+  startConsumer,
+  disconnectKafka
+};

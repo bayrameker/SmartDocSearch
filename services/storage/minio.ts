@@ -47,26 +47,25 @@ export async function initializeMinIO() {
 
 // Upload a file to MinIO
 export async function uploadFile(buffer: Buffer, fileName: string, contentType: string): Promise<string> {
-  return new Promise((resolve, reject) => {
+  try {
     const timestamp = Date.now();
     const objectName = `${timestamp}_${fileName}`;
     
-    minioClient.putObject(
+    await minioClient.putObject(
       MINIO_BUCKET_NAME,
       objectName,
       buffer,
-      buffer.length,
-      { 'Content-Type': contentType },
-      (err, etag) => {
-        if (err) {
-          console.error('Error uploading file to MinIO:', err);
-          return reject(err);
-        }
-        console.log(`File uploaded successfully with etag: ${etag}`);
-        resolve(objectName);
+      {
+        'Content-Type': contentType
       }
     );
-  });
+    
+    console.log(`File uploaded successfully: ${objectName}`);
+    return objectName;
+  } catch (err) {
+    console.error('Error uploading file to MinIO:', err);
+    throw err;
+  }
 }
 
 // Get a presigned URL for downloading a file
@@ -94,21 +93,19 @@ export async function deleteFile(objectName: string): Promise<boolean> {
 
 // List all files in a directory
 export async function listFiles(prefix: string): Promise<string[]> {
-  return new Promise((resolve, reject) => {
+  try {
     const objectsList: string[] = [];
-    const stream = minioClient.listObjects(MINIO_BUCKET_NAME, prefix, true);
+    const objectsStream = await minioClient.listObjects(MINIO_BUCKET_NAME, prefix, true);
     
-    stream.on('data', (obj) => {
-      objectsList.push(obj.name);
-    });
+    for await (const obj of objectsStream) {
+      if (obj.name) {
+        objectsList.push(obj.name);
+      }
+    }
     
-    stream.on('error', (err) => {
-      console.error('Error listing files:', err);
-      reject(err);
-    });
-    
-    stream.on('end', () => {
-      resolve(objectsList);
-    });
-  });
+    return objectsList;
+  } catch (error) {
+    console.error('Error listing files:', error);
+    throw error;
+  }
 }

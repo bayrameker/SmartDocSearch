@@ -26,10 +26,12 @@
     "jwt-decode": "^4.0.0",
     "kafkajs": "^2.2.4",
     "minio": "^8.0.5",
+    "node-fetch": "^3.3.2",
     "openai": "^4.93.0",
     "svelte": "^5.26.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "typesense": "^2.0.3"
+    "typesense": "^2.0.3",
+    "uuid": "^11.1.0"
   }
 }

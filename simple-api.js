@@ -2,6 +2,7 @@ const fastify = require('fastify');
 const cors = require('@fastify/cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const multer = require('fastify-multer');
 
 // Configuration
 const JWT_SECRET = 'your-secret-key';
@@ -23,6 +24,9 @@ server.register(cors, {
   maxAge: 86400,
   preflight: true,
 });
+
+// Multer configuration for file uploads
+server.register(multer.contentParser);
 
 // In-memory user storage for demonstration
 const users = [];
@@ -361,13 +365,37 @@ server.get('/documents/:id', async (request, reply) => {
   }
 });
 
-server.post('/documents/upload', async (request, reply) => {
+// Multer storage setup
+const upload = multer({ 
+  dest: '/tmp/uploads/',
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
+
+// Document upload endpoint with file handling
+server.post('/documents/upload', { preHandler: upload.single('file') }, async (request, reply) => {
   try {
+    console.log('Request body:', request.body);
+    console.log('File received:', request.file);
+    
+    const title = request.body.title || 'Untitled Document';
+    
+    // Dosya bilgilerini çek (mevcutsa)
+    const uploadedFile = request.file || {
+      originalname: 'ornek.pdf',
+      mimetype: 'application/pdf',
+      size: 0,
+      path: '/tmp/uploads/empty'
+    };
+    
+    // Yüklenen dosya bilgilerini döndür
     return reply.code(201).send({
-      id: 1,
-      title: 'Yüklenen Belge',
-      filename: 'yuklenen.pdf',
-      mimeType: 'application/pdf',
+      id: Math.floor(Math.random() * 1000) + 3, // Random ID 3-1002 aralığında
+      title: title,
+      filename: uploadedFile.originalname,
+      mimeType: uploadedFile.mimetype,
+      fileSize: uploadedFile.size,
       createdAt: new Date().toISOString(),
       status: 'processing',
       success: true
@@ -376,7 +404,7 @@ server.post('/documents/upload', async (request, reply) => {
     server.log.error('Error uploading document:', error);
     return reply.code(500).send({
       success: false,
-      error: 'Belge yüklenirken bir hata oluştu'
+      error: 'Belge yüklenirken bir hata oluştu: ' + error.message
     });
   }
 });

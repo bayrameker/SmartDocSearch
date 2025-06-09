@@ -34,7 +34,7 @@ This system has a modular structure that includes the following microservices:
 
 ## 🛠️ Installation 2
 
-### Requirements
+### Requirements 2
 
 - Node.js 18+
 - PostgreSQL

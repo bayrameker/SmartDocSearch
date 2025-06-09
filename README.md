@@ -11,7 +11,7 @@ This project is an advanced application using microservice architecture to provi
 - **Multi-language Support**: Support for multiple languages including Turkish and English
 - **Secure Access Control**: Role-based authorization system
 
-## 🏗️ Architecture
+## 🏗️ Architecture 2
 
 This system has a modular structure that includes the following microservices:
 

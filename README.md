@@ -32,7 +32,7 @@ This system has a modular structure that includes the following microservices:
 - **Storage**: MinIO (S3-compatible object storage)
 - **AI/ML**: OpenAI (embeddings, question-answering)
 
-## 🛠️ Installation
+## 🛠️ Installation 2
 
 ### Requirements
 

@@ -22,7 +22,7 @@ This system has a modular structure that includes the following microservices:
 - **Vector Service**: Document vector embeddings and semantic search
 - **Query Engine**: Natural language queries and AI responses
 
-## 🚀 Technology Stack
+## 🚀 Technology Stack 2
 
 - **Backend**: Node.js, Fastify, gRPC
 - **Frontend**: SvelteKit

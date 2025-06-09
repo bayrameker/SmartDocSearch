@@ -2,7 +2,7 @@
 
 This project is an advanced application using microservice architecture to provide an AI-powered document search and query platform. Users can upload documents to the system and utilize text mining and artificial intelligence technologies for advanced search and question-answering capabilities.
 
-## 🌟 Features
+## 🌟 Features 2
 
 - **Document Upload and Processing**: Supports PDF, TXT, DOCX, and other document formats
 - **Automatic OCR**: Automatically converts scanned documents and images to text
